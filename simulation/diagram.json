@@ -1,0 +1,460 @@
+{
+  "version": 1,
+  "author": "Mini Casino",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": 180,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd",
+      "top": -110,
+      "left": 80,
+      "attrs": {
+        "pins": "labeled",
+        "color": "black",
+        "background": "green"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btnSchwarz",
+      "top": 460,
+      "left": 300,
+      "attrs": {
+        "color": "black",
+        "label": "Schwarz"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btnRot",
+      "top": 520,
+      "left": 300,
+      "attrs": {
+        "color": "red",
+        "label": "Rot"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btnGruen",
+      "top": 580,
+      "left": 300,
+      "attrs": {
+        "color": "green",
+        "label": "Gruen"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledSchwarz",
+      "top": 460,
+      "left": 520,
+      "attrs": {
+        "color": "white",
+        "label": "Schwarz"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledRot",
+      "top": 520,
+      "left": 520,
+      "attrs": {
+        "color": "red",
+        "label": "Rot"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledGruen",
+      "top": 580,
+      "left": 520,
+      "attrs": {
+        "color": "green",
+        "label": "Gruen"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rSchwarz",
+      "top": 470,
+      "left": 440,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rRot",
+      "top": 530,
+      "left": 440,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rGruen",
+      "top": 590,
+      "left": 440,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "buzzer",
+      "top": 300,
+      "left": 640,
+      "attrs": {
+        "volume": "0.1"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "karte1",
+      "top": 180,
+      "left": 300,
+      "attrs": {
+        "color": "blue",
+        "label": "Karte 1"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "karte2",
+      "top": 240,
+      "left": 300,
+      "attrs": {
+        "color": "blue",
+        "label": "Karte 2"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "karte3",
+      "top": 300,
+      "left": 300,
+      "attrs": {
+        "color": "blue",
+        "label": "Karte 3"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "karte4",
+      "top": 360,
+      "left": 300,
+      "attrs": {
+        "color": "blue",
+        "label": "Karte 4"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "uno:GND.1",
+      "lcd:VSS",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:5V",
+      "lcd:VDD",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:GND.1",
+      "lcd:V0",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:8",
+      "lcd:RS",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:GND.1",
+      "lcd:RW",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:7",
+      "lcd:E",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:6",
+      "lcd:D4",
+      "blue",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:5",
+      "lcd:D5",
+      "blue",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:4",
+      "lcd:D6",
+      "blue",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:3",
+      "lcd:D7",
+      "blue",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:5V",
+      "lcd:A",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:GND.1",
+      "lcd:K",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:A0",
+      "btnSchwarz:1.l",
+      "gray",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "btnSchwarz:2.l",
+      "uno:GND.2",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:A1",
+      "btnRot:1.l",
+      "gray",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "btnRot:2.l",
+      "uno:GND.2",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:A2",
+      "btnGruen:1.l",
+      "gray",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "btnGruen:2.l",
+      "uno:GND.2",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:A3",
+      "rSchwarz:1",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "rSchwarz:2",
+      "ledSchwarz:A",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "ledSchwarz:C",
+      "uno:GND.3",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:A4",
+      "rRot:1",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "rRot:2",
+      "ledRot:A",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "ledRot:C",
+      "uno:GND.3",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:A5",
+      "rGruen:1",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "rGruen:2",
+      "ledGruen:A",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "ledGruen:C",
+      "uno:GND.3",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:2",
+      "buzzer:1",
+      "purple",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "buzzer:2",
+      "uno:GND.3",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:9",
+      "karte1:1.l",
+      "cyan",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "karte1:2.l",
+      "uno:GND.2",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:10",
+      "karte2:1.l",
+      "cyan",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "karte2:2.l",
+      "uno:GND.2",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:11",
+      "karte3:1.l",
+      "cyan",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "karte3:2.l",
+      "uno:GND.2",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "uno:12",
+      "karte4:1.l",
+      "cyan",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "karte4:2.l",
+      "uno:GND.2",
+      "black",
+      [
+        "v0"
+      ]
+    ]
+  ],
+  "dependencies": {}
+}
