@@ -12,32 +12,39 @@
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
-  .app { display: grid; grid-template-columns: 1fr 390px; height: 100%; }
+  .app { display: grid; grid-template-columns: 1fr 400px; height: 100%; }
   .stage { position: relative; min-height: 0; }
-  canvas#c { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+  canvas#c { display: block; width: 100%; height: 100%; touch-action: none; outline: none; cursor: grab; }
   .hud { position: absolute; left: 22px; top: 18px; pointer-events: none; }
   .hud h1 { font-size: 24px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
-  .hud p { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; max-width: 420px; }
-  .legend { position: absolute; left: 22px; bottom: 16px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+  .hud p { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; max-width: 440px; }
+  .legend { position: absolute; left: 22px; bottom: 16px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; max-width: 70%; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); background: rgba(34,33,46,.85); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px 2px 6px; }
   .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); pointer-events: none; }
   .loading[hidden] { display: none; }
-  aside { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 18px 20px 40px; }
-  h2 { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 22px 0 10px; font-weight: 600; }
-  aside > h2:first-child { margin-top: 0; }
+  aside { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 14px 20px 40px; }
+  .tabs { display: flex; gap: 4px; background: var(--panel2); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+  .tabs button { flex: 1; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); background: transparent; border: 0; border-radius: 9px; padding: 7px 4px; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--ink); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  section[hidden] { display: none; }
+  h2 { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 20px 0 10px; font-weight: 600; }
+  section > h2:first-child { margin-top: 0; }
   .lcd { background: #262538; border: 3px solid #1A1926; border-radius: 6px; padding: 8px 10px; font: 600 17px/1.35 ui-monospace, Consolas, "Courier New", monospace; color: var(--lcd); letter-spacing: .12em; white-space: pre; box-shadow: inset 0 0 18px rgba(0,0,0,.35); }
   .status { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
   .status div { background: var(--panel2); border-radius: 10px; padding: 6px 10px; font-size: 12px; color: var(--muted); }
   .status b { display: block; font-size: 14px; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
   .cards { display: grid; gap: 6px; }
-  .card { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; text-align: left; font: inherit; color: var(--ink); background: var(--panel2); border: 1px solid transparent; border-radius: 10px; padding: 7px 12px; cursor: pointer; }
+  .card { display: grid; grid-template-columns: 14px 1fr auto; gap: 2px 10px; align-items: center; text-align: left; font: inherit; color: var(--ink); background: var(--panel2); border: 1px solid transparent; border-radius: 10px; padding: 7px 12px; cursor: pointer; }
   .card:hover { border-color: var(--line); }
   .card.selected { border-color: var(--accent); background: var(--accent-soft); }
   .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .card small { grid-column: 1; color: var(--muted); font: 11px ui-monospace, Consolas, monospace; letter-spacing: .05em; }
+  .card i { grid-row: 1 / span 2; width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .card small { grid-column: 2; color: var(--muted); font: 11px ui-monospace, Consolas, monospace; letter-spacing: .05em; }
   .card b { grid-row: 1 / span 2; font-weight: 600; font-variant-numeric: tabular-nums; }
   .card.funded b::after { content: "€"; color: var(--muted); }
+  .card .flag { grid-column: 3; grid-row: 1 / span 2; font-size: 11px; color: var(--bad); font-weight: 600; }
   .hint { color: var(--muted); font-size: 12.5px; margin: 10px 0 0; }
   .hint kbd { font: 11px ui-monospace, Consolas, monospace; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
   .controls { display: grid; gap: 10px; }
@@ -55,17 +62,33 @@
   .btns button, button.plain { font: inherit; font-size: 12.5px; font-weight: 500; color: var(--ink); background: var(--accent-soft); border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
   .btns button:hover, button.plain:hover { filter: brightness(1.15); }
   .btns button:focus-visible, button.plain:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.danger { background: #4A2B33; color: #F5B7B0; }
   .log { background: #14131C; border-radius: 10px; padding: 8px 10px; height: 150px; overflow: auto; font: 11px/1.45 ui-monospace, Consolas, monospace; color: #B9B5CC; white-space: pre-wrap; word-break: break-word; }
+  .log .resp { color: #C6EBC5; }
+  .log .err { color: #F5B7B0; }
+  .log .cmd { color: #F0C24E; }
   details { border-top: 1px solid var(--line); padding: 8px 0; }
   summary { cursor: pointer; font-weight: 600; font-size: 13px; color: var(--ink); list-style: none; display: flex; justify-content: space-between; }
   summary::after { content: "+"; color: var(--muted); }
   details[open] summary::after { content: "–"; }
   table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; margin-top: 6px; }
-  td { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; vertical-align: top; }
-  td:last-child { text-align: right; font-family: ui-monospace, Consolas, monospace; font-size: 12px; white-space: nowrap; color: var(--muted); }
+  td, th { padding: 4px 4px 4px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; vertical-align: middle; text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  td:last-child { text-align: right; }
+  .dims td:last-child { font-family: ui-monospace, Consolas, monospace; font-size: 12px; white-space: nowrap; color: var(--muted); }
   ol, ul { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; }
   li { margin: 3px 0; }
   li b { font-weight: 600; }
+  .admin td input, .admin td select, .field input, .field select, .console input { font: inherit; font-size: 12.5px; color: var(--ink); background: #14131C; border: 1px solid var(--line); border-radius: 7px; padding: 4px 7px; }
+  .admin td input { width: 68px; }
+  .admin td.uid { font: 11px ui-monospace, Consolas, monospace; letter-spacing: .04em; }
+  .admin tr.live td { background: rgba(183,168,240,.08); }
+  .admin td button { font: inherit; font-size: 11.5px; color: #F5B7B0; background: #3A2830; border: 0; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+  .field { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .field input { flex: 1; min-width: 120px; }
+  .console { display: flex; gap: 6px; margin-top: 6px; }
+  .console input { flex: 1; font-family: ui-monospace, Consolas, monospace; }
+  .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--panel2); color: var(--muted); margin-right: 4px; }
   @media (max-width: 900px) {
     .app { grid-template-columns: 1fr; grid-template-rows: 56vh auto; height: auto; }
     aside { border-left: 0; border-top: 1px solid var(--line); }
@@ -78,98 +101,153 @@
     <canvas id="c" tabindex="0" aria-label="3d view of the case, click the buttons and the tap zone"></canvas>
     <div class="hud">
       <h1>mini casino case</h1>
-      <p>the model plays. click the tap zone or a card on the right, then press the buttons on the model. hold black for the stake, red to log out, green for the volume.</p>
+      <p>the model plays. tap the zone with the floating transponder, press the buttons on the model, hold black for the stake, red to log out, green for the volume.</p>
     </div>
     <div class="legend">
       <span><i style="background:#A9DEC6"></i>base</span>
       <span><i style="background:#C4B6F0"></i>lid</span>
-      <span><i style="background:#6FBF9C"></i>uno</span>
-      <span><i style="background:#F3E3BF"></i>breadboard</span>
-      <span><i style="background:#8DB9E9"></i>rc522</span>
-      <span><i style="background:#5B5878"></i>lcd</span>
+      <span><i style="background:#6FA8E8"></i>spi to rc522</span>
+      <span><i style="background:#A99BE8"></i>lcd data</span>
+      <span><i style="background:#F5AC85"></i>buttons</span>
+      <span><i style="background:#E85D55"></i>5 v</span>
+      <span><i style="background:#F0C24E"></i>3.3 v</span>
+      <span><i style="background:#3E3B54;border:1px solid #6B6880"></i>gnd</span>
     </div>
     <div class="loading" id="loading">building the model</div>
   </div>
 
   <aside>
-    <h2>lcd</h2>
-    <div class="lcd" id="lcd">Mini Casino v10
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-play" aria-selected="true" data-tab="play">play</button>
+      <button type="button" role="tab" id="tab-admin" aria-selected="false" data-tab="admin">admin</button>
+      <button type="button" role="tab" id="tab-view" aria-selected="false" data-tab="view">view</button>
+      <button type="button" role="tab" id="tab-case" aria-selected="false" data-tab="case">case</button>
+    </div>
+
+    <section id="sec-play">
+      <h2>lcd</h2>
+      <div class="lcd" id="lcd">Mini Casino v10
 Karte auflegen  </div>
-    <div class="status">
-      <div>session<b id="st-session">none</b></div>
-      <div>stake<b id="st-stake">10€</b></div>
-      <div>sound<b id="st-sound">loud</b></div>
-    </div>
-
-    <h2>cards</h2>
-    <div class="cards" id="cards"></div>
-    <p class="hint">click a card to tap it, or click the tap zone on the model. keys: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> press the buttons, <kbd>c</kbd> taps the selected card. a session ends after 60 s without a press. balances stay in this browser.</p>
-    <div class="btns" style="margin-top:8px"><button type="button" id="reset">reset all cards to 100</button></div>
-
-    <h2>serial monitor</h2>
-    <div class="log" id="log" aria-live="polite"></div>
-
-    <h2>view</h2>
-    <div class="controls">
-      <div class="row"><label for="explode">explode</label><input type="range" id="explode" min="0" max="1" step="0.01" value="0"></div>
-      <div class="row"><label for="parts">show the electronics</label><span class="switch"><input type="checkbox" id="parts" checked><i></i></span></div>
-      <div class="row"><label for="xray">see through the lid</label><span class="switch"><input type="checkbox" id="xray"><i></i></span></div>
-      <div class="row"><label for="spin">slow spin</label><span class="switch"><input type="checkbox" id="spin"><i></i></span></div>
-      <div class="btns">
-        <button type="button" data-view="iso">3/4 view</button>
-        <button type="button" data-view="player">player</button>
-        <button type="button" data-view="top">top</button>
-        <button type="button" data-view="left">ports side</button>
-        <button type="button" data-view="under">underside</button>
+      <div class="status">
+        <div>session<b id="st-session">none</b></div>
+        <div>stake<b id="st-stake">10€</b></div>
+        <div>sound<b id="st-sound">loud</b></div>
       </div>
-    </div>
+      <h2>transponders</h2>
+      <div class="cards" id="cards"></div>
+      <p class="hint">click one to tap it, or click the tap zone on the model. keys: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> press the buttons, <kbd>c</kbd> taps the selected transponder. a session ends after 60 s without a press. accounts stay in this browser.</p>
+      <h2>serial monitor</h2>
+      <div class="log" id="log" aria-live="polite"></div>
+    </section>
 
-    <h2>the case</h2>
-    <details open>
-      <summary>dimensions</summary>
-      <table>
-        <tr><td>footprint</td><td>190 × 130 mm</td></tr>
-        <tr><td>height front / back</td><td>40 / 62.9 mm</td></tr>
-        <tr><td>top slope</td><td>10°</td></tr>
-        <tr><td>walls / floor / lid</td><td>3.2 / 4 / 4 mm</td></tr>
-        <tr><td>lid screws</td><td>6 × m3 12 countersunk</td></tr>
-        <tr><td>button holes</td><td>Ø 24.5 (24 mm arcade)</td></tr>
-        <tr><td>led holes</td><td>Ø 5.1 press fit</td></tr>
-        <tr><td>lcd window</td><td>72.5 × 25.5 mm</td></tr>
-        <tr><td>usb b / dc jack</td><td>14 × 13, 11 × 13 mm</td></tr>
+    <section id="sec-admin" hidden>
+      <h2>automat</h2>
+      <div id="ping"><span class="pill">…</span></div>
+      <div class="field">
+        <label for="sound">sound</label>
+        <select id="sound"><option value="0">laut</option><option value="1">leise</option><option value="2">aus</option></select>
+        <button type="button" class="plain danger" id="wipe">wipe everything</button>
+      </div>
+      <h2>accounts</h2>
+      <div class="admin">
+        <table id="acc"><thead><tr><th>slot</th><th>uid</th><th>status</th><th>balance</th><th>stake</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+      <p class="hint">edits are sent as SET, STAKE, FLAG and FREE, exactly what the real panel sends over usb. banning ends a running session at once, an admin card plays with unlimited credit.</p>
+      <h2>add a card by hand</h2>
+      <div class="field">
+        <input id="add-uid" placeholder="uid hex, e.g. 04CABD5C110189" aria-label="uid">
+        <input id="add-val" type="number" value="100" min="0" style="width:80px;flex:none" aria-label="balance">
+        <button type="button" class="plain" id="add">add</button>
+        <button type="button" class="plain" id="card-cmd">tap this uid</button>
+      </div>
+      <h2>serial console</h2>
+      <div class="log" id="console"></div>
+      <div class="console">
+        <input id="cmd" placeholder="PING, LIST, SET 0 500, FLAG 1 2, CARD 11223344 …" aria-label="command">
+        <button type="button" class="plain" id="send">send</button>
+      </div>
+      <p class="hint">the same line protocol as <code>AdminSerial.h</code>: PING, LIST, SET, STAKE, ADD, FLAG, FREE, SOUND, CARD, WIPE JA. answers start with #, log lines with [.</p>
+    </section>
+
+    <section id="sec-view" hidden>
+      <h2>view</h2>
+      <div class="controls">
+        <div class="row"><label for="explode">explode</label><input type="range" id="explode" min="0" max="1" step="0.01" value="0"></div>
+        <div class="row"><label for="parts">electronics</label><span class="switch"><input type="checkbox" id="parts" checked><i></i></span></div>
+        <div class="row"><label for="wires">wires</label><span class="switch"><input type="checkbox" id="wires" checked><i></i></span></div>
+        <div class="row"><label for="xray">see through the lid</label><span class="switch"><input type="checkbox" id="xray"><i></i></span></div>
+        <div class="row"><label for="hidebase">hide the body</label><span class="switch"><input type="checkbox" id="hidebase"><i></i></span></div>
+        <div class="row"><label for="spin">slow spin</label><span class="switch"><input type="checkbox" id="spin"><i></i></span></div>
+        <div class="btns">
+          <button type="button" data-view="iso">3/4 view</button>
+          <button type="button" data-view="player">player</button>
+          <button type="button" data-view="top">top</button>
+          <button type="button" data-view="inside">inside</button>
+          <button type="button" data-view="left">ports side</button>
+          <button type="button" data-view="under">underside</button>
+        </div>
+      </div>
+      <h2>wiring</h2>
+      <table class="dims">
+        <tr><td>rc522 sda, sck, mosi, miso, rst</td><td>d10, d13, d11, d12, d9</td></tr>
+        <tr><td>rc522 vcc, gnd</td><td>3v3, gnd</td></tr>
+        <tr><td>lcd rs, e, d4, d5, d6, d7</td><td>d8, d7, d6, d5, d4, d3</td></tr>
+        <tr><td>lcd vss, rw, k / vdd / a / v0</td><td>gnd / 5v / 200 Ω to 5v / pot</td></tr>
+        <tr><td>buttons black, red, green</td><td>a0, a1, a2 to gnd</td></tr>
+        <tr><td>leds black, red, green</td><td>a3, a4, a5 via 330 Ω</td></tr>
+        <tr><td>buzzer s, −</td><td>d2 via 330 Ω, gnd</td></tr>
       </table>
-    </details>
-    <details>
-      <summary>printing</summary>
-      <ul>
-        <li><b>material</b> petg for drops, pla works too</li>
-        <li><b>base</b> open side up, no supports</li>
-        <li><b>lid</b> the stl is already flipped, top face on the bed, no supports</li>
-        <li><b>settings</b> 0.2 mm layers, 4 walls, 5 top and bottom, 30 % gyroid</li>
-        <li><b>rough cost</b> 250 to 300 g, 12 to 16 h with a 0.4 nozzle</li>
-      </ul>
-    </details>
-    <details>
-      <summary>assembly</summary>
-      <ol>
-        <li>uno onto its four standoffs, m3 self tapping</li>
-        <li>half breadboard into the pocket, wire leds and resistors there</li>
-        <li>leds pressed into the lid, arcade buttons from the top with their nuts</li>
-        <li>lcd onto the four standoffs under the window, m2.5</li>
-        <li>rc522 clipped into its frame, header toward the front slot, buzzer into its ring</li>
-        <li>lid on, six m3 countersunk screws, rubber feet underneath</li>
-      </ol>
-    </details>
-    <details>
-      <summary>parts to buy</summary>
-      <ul>
-        <li>3 arcade buttons 24 mm, black, red, green</li>
-        <li>3 leds 5 mm, 3 resistors 330 Ω, passive buzzer</li>
-        <li>half size breadboard, self adhesive</li>
-        <li>6 × m3 12 countersunk, 4 × m3 8, 4 × m2.5 6, four rubber feet</li>
-      </ul>
-    </details>
-    <p class="hint">stl files sit in <code>case/stl</code>. every size is a parameter in <code>case/make_case.py</code>, run it and this page updates too.</p>
+      <p class="hint">the wires run to a half breadboard next to the uno. resistors bridge its centre channel, the two rails carry 5 v and gnd.</p>
+    </section>
+
+    <section id="sec-case" hidden>
+      <h2>the case</h2>
+      <details open>
+        <summary>dimensions</summary>
+        <table class="dims">
+          <tr><td>footprint</td><td>190 × 130 mm</td></tr>
+          <tr><td>height front / back</td><td>40 / 62.9 mm</td></tr>
+          <tr><td>top slope</td><td>10°</td></tr>
+          <tr><td>walls / floor / lid</td><td>3.2 / 4 / 4 mm</td></tr>
+          <tr><td>lid screws</td><td>6 × m3 12 countersunk</td></tr>
+          <tr><td>button holes</td><td>Ø 24.5 (24 mm arcade)</td></tr>
+          <tr><td>led holes</td><td>Ø 5.1 press fit</td></tr>
+          <tr><td>lcd window</td><td>72.5 × 25.5 mm</td></tr>
+          <tr><td>usb b / dc jack</td><td>14 × 13, 11 × 13 mm</td></tr>
+        </table>
+      </details>
+      <details>
+        <summary>printing</summary>
+        <ul>
+          <li><b>material</b> petg for drops, pla works too</li>
+          <li><b>base</b> open side up, no supports</li>
+          <li><b>lid</b> the stl is already flipped, top face on the bed, no supports</li>
+          <li><b>settings</b> 0.2 mm layers, 4 walls, 5 top and bottom, 30 % gyroid</li>
+          <li><b>rough cost</b> 250 to 300 g, 12 to 16 h with a 0.4 nozzle</li>
+        </ul>
+      </details>
+      <details>
+        <summary>assembly</summary>
+        <ol>
+          <li>uno onto its four standoffs, m3 self tapping</li>
+          <li>half breadboard into the pocket, resistors and the contrast pot go there</li>
+          <li>leds pressed into the lid, arcade buttons from the top with their nuts</li>
+          <li>lcd onto the four standoffs under the window, m2.5</li>
+          <li>rc522 clipped into its frame, header through the front slot, buzzer into its ring</li>
+          <li>wire it like the model, then lid on with six m3 countersunk screws</li>
+        </ol>
+      </details>
+      <details>
+        <summary>parts to buy</summary>
+        <ul>
+          <li>3 arcade buttons 24 mm, black, red, green</li>
+          <li>3 leds 5 mm, 4 resistors 330 Ω, 1 resistor 200 Ω, 10k trim pot</li>
+          <li>passive buzzer module, half size breadboard, jumper wires</li>
+          <li>6 × m3 12 countersunk, 4 × m3 8, 4 × m2.5 6, four rubber feet</li>
+        </ul>
+      </details>
+      <p class="hint">stl files sit in <code>case/stl</code>. every size is a parameter in <code>case/make_case.py</code>, run it and this page updates too.</p>
+    </section>
   </aside>
 </div>
 
@@ -183,7 +261,9 @@ Karte auflegen  </div>
   const Z_LID = L.h_front - L.lid / COS;
   const LED_COL = [0x8D9AB4, 0xEA7F76, 0x93D391];
   const BTN_COL = [0x3B3A4C, 0xE2685F, 0x74C97A];
+  const WIRE = { rfid: 0x6FA8E8, lcd: 0xA99BE8, btn: 0xF5AC85, led: LED_COL, buz: 0xEE93A9, v5: 0xE85D55, v33: 0xF0C24E, gnd: 0x3E3B54 };
   const $ = id => document.getElementById(id);
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
   // ------------------------------------------------------------ scene
   const canvas = $("c");
@@ -197,155 +277,375 @@ Karte auflegen  </div>
   renderer.setClearColor(0x1B1A24);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(30, 1, 1, 5000);
-
-  const root = new THREE.Group();           // model space is z up, this turns it into three's y up
-  root.rotation.x = -Math.PI / 2;
-  scene.add(root);
-  const baseGroup = new THREE.Group();
-  const explodeGroup = new THREE.Group();   // everything that moves with the lid
+  const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; scene.add(root);   // z up model space
+  const baseGroup = new THREE.Group(), explodeGroup = new THREE.Group();
   const lidRecon = new THREE.Group(); lidRecon.rotation.x = SLOPE;
   const g2 = new THREE.Group(); g2.rotation.x = -Math.PI;
   const g1 = new THREE.Group(); g1.position.fromArray(L.lid_print_shift);
   g2.add(g1); lidRecon.add(g2);
-  const lidParts = new THREE.Group();
+  const lidParts = new THREE.Group(), wireGroup = new THREE.Group(), electronics = new THREE.Group();
   explodeGroup.add(lidRecon, lidParts);
-  root.add(baseGroup, explodeGroup);
+  root.add(baseGroup, explodeGroup, wireGroup, electronics);
 
   scene.add(new THREE.HemisphereLight(0xD7D2F2, 0x1F1D2B, 0.5));
   const key = new THREE.DirectionalLight(0xFFF3E4, 1.15);
-  key.position.set(200, 420, 240);
-  key.castShadow = true;
-  key.shadow.mapSize.set(1536, 1536);
+  key.position.set(200, 420, 240); key.castShadow = true; key.shadow.mapSize.set(1536, 1536);
   Object.assign(key.shadow.camera, { left: -260, right: 260, top: 260, bottom: -260, near: 50, far: 1400 });
-  key.shadow.bias = -0.0005;
-  key.shadow.radius = 3;
-  scene.add(key);
+  key.shadow.bias = -0.0005; scene.add(key);
   const rim = new THREE.DirectionalLight(0x9FB4FF, 0.55); rim.position.set(-280, 220, -260); scene.add(rim);
   const front = new THREE.DirectionalLight(0xFFFFFF, 0.2); front.position.set(60, 120, 420); scene.add(front);
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(900, 72), new THREE.MeshStandardMaterial({ color: 0x232233, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.3; ground.receiveShadow = true; scene.add(ground);
+  const grid = new THREE.GridHelper(1200, 60, 0x3A3850, 0x2C2B3D); grid.position.y = -0.2; grid.material.transparent = true; grid.material.opacity = 0.5; scene.add(grid);
 
-  const ground = new THREE.Mesh(new THREE.CircleGeometry(900, 72), new THREE.MeshStandardMaterial({ color: 0x232233, roughness: 1, metalness: 0 }));
-  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.3; ground.receiveShadow = true;
-  scene.add(ground);
-  const grid = new THREE.GridHelper(1200, 60, 0x3A3850, 0x2C2B3D);
-  grid.position.y = -0.2; grid.material.transparent = true; grid.material.opacity = 0.5;
-  scene.add(grid);
-
-  // ------------------------------------------------------------ meshes from models.js
-  function decode(b64) {
-    const bin = atob(b64), buf = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-    return buf.buffer;
+  // ------------------------------------------------------------ helpers
+  const mat = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6, metalness: 0 }, o));
+  const M = { black: mat(0x1E1D28, { roughness: 0.5 }), dark: mat(0x2A2937), silver: mat(0xC9CED6, { roughness: 0.35, metalness: 0.6 }), gold: mat(0xD9B25A, { roughness: 0.35, metalness: 0.7 }), pin: mat(0xB8BCC8, { roughness: 0.3, metalness: 0.7 }), white: mat(0xEDEAF0), beige: mat(0xE7D9B8), green: mat(0x2F7D5A), teal: mat(0x2D8A9A), blue: mat(0x2B5FA8) };
+  function box(w, d, h, material, x = 0, y = 0, z = 0) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, d, h), material);
+    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m;
   }
+  function zcyl(r, h, material, x = 0, y = 0, z = 0, seg = 32) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), material);
+    m.rotation.x = Math.PI / 2; m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m;
+  }
+  function xcyl(r, h, material, x = 0, y = 0, z = 0, seg = 16) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), material);
+    m.rotation.z = Math.PI / 2; m.position.set(x, y, z); m.castShadow = true; return m;
+  }
+  function merged(list) {       // merge boxes into one mesh so headers are one draw call
+    const geos = list.map(([w, d, h, x, y, z]) => { const g = new THREE.BoxGeometry(w, d, h); g.translate(x, y, z); return g; });
+    let count = 0; geos.forEach(g => { count += g.getAttribute("position").count; });
+    const pos = new Float32Array(count * 3), nor = new Float32Array(count * 3), idx = [];
+    let off = 0, vOff = 0;
+    for (const g of geos) {
+      pos.set(g.getAttribute("position").array, off); nor.set(g.getAttribute("normal").array, off);
+      const ix = g.getIndex().array; for (let i = 0; i < ix.length; i++) idx.push(ix[i] + vOff);
+      off += g.getAttribute("position").count * 3; vOff += g.getAttribute("position").count;
+    }
+    const out = new THREE.BufferGeometry();
+    out.setAttribute("position", new THREE.BufferAttribute(pos, 3)); out.setAttribute("normal", new THREE.BufferAttribute(nor, 3)); out.setIndex(idx);
+    return out;
+  }
+  function onLid(u, v, top = true) {
+    const y = v * COS, z = (top ? L.h_front : Z_LID) + y * TAN;
+    const g = new THREE.Group(); g.position.set(u, y, z); g.rotation.x = SLOPE; return g;
+  }
+  function texture(w, h, draw) {
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    draw(c.getContext("2d"), w, h);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t;
+  }
+  function header(pins, x0, y0, z0, pitch = 2.54, h = 8.5, along = "x") {
+    // black header body with pin holes on top, pins listed left to right or bottom to top
+    const w = pins * pitch, body = along === "x" ? box(w, 2.54, h, M.black, x0 + w / 2, y0, z0 + h / 2) : box(2.54, w, h, M.black, x0, y0 + w / 2, z0 + h / 2);
+    const holes = [];
+    for (let i = 0; i < pins; i++) holes.push(along === "x" ? [1, 1, 0.3, x0 + pitch / 2 + i * pitch, y0, z0 + h] : [1, 1, 0.3, x0, y0 + pitch / 2 + i * pitch, z0 + h]);
+    const hm = new THREE.Mesh(merged(holes), mat(0x0A0A10)); body.add(new THREE.Group());
+    const g = new THREE.Group(); g.add(body, hm); return g;
+  }
+  function pinRow(pins, x0, y0, zTop, len, pitch = 2.54, along = "x") {
+    const list = [];
+    for (let i = 0; i < pins; i++) list.push(along === "x" ? [0.64, 0.64, len, x0 + pitch / 2 + i * pitch, y0, zTop - len / 2] : [0.64, 0.64, len, x0, y0 + pitch / 2 + i * pitch, zTop - len / 2]);
+    const m = new THREE.Mesh(merged(list), M.pin); m.castShadow = true; return m;
+  }
+
+  // ------------------------------------------------------------ case parts from models.js
+  function decode(b64) { const bin = atob(b64), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i); return buf.buffer; }
   function parseStl(buf) {
     const dv = new DataView(buf), n = dv.getUint32(80, true);
     const pos = new Float32Array(n * 9), nor = new Float32Array(n * 9);
     let o = 84;
     for (let i = 0; i < n; i++) {
       const nx = dv.getFloat32(o, true), ny = dv.getFloat32(o + 4, true), nz = dv.getFloat32(o + 8, true);
-      for (let k = 0; k < 3; k++) {
-        const b = o + 12 + k * 12, j = i * 9 + k * 3;
-        pos[j] = dv.getFloat32(b, true); pos[j + 1] = dv.getFloat32(b + 4, true); pos[j + 2] = dv.getFloat32(b + 8, true);
-        nor[j] = nx; nor[j + 1] = ny; nor[j + 2] = nz;
-      }
+      for (let k = 0; k < 3; k++) { const b = o + 12 + k * 12, j = i * 9 + k * 3; pos[j] = dv.getFloat32(b, true); pos[j + 1] = dv.getFloat32(b + 4, true); pos[j + 2] = dv.getFloat32(b + 8, true); nor[j] = nx; nor[j + 1] = ny; nor[j + 2] = nz; }
       o += 50;
     }
     const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    g.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
-    return g;
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.BufferAttribute(nor, 3)); return g;
   }
-  const FILES = {
-    base: { color: 0xA9DEC6, group: baseGroup, edges: 0.5 },
-    lid: { color: 0xC4B6F0, group: g1, edges: 0.5 },
-    uno: { color: 0x6FBF9C, group: baseGroup, part: true, edges: 0.35 },
-    breadboard: { color: 0xF3E3BF, group: baseGroup, part: true, edges: 0.35 },
-    lcd: { color: 0x5B5878, group: lidParts, part: true, edges: 0.35 },
-    rc522: { color: 0x8DB9E9, group: lidParts, part: true, edges: 0.35 },
-    buzzer: { color: 0x3E3B54, group: lidParts, part: true, edges: 0.35 },
-  };
   const meshes = {}, edgeLines = {};
-  function loadModels() {
-    for (const [name, f] of Object.entries(FILES)) {
-      if (!MODELS[name]) continue;
-      const geo = parseStl(decode(MODELS[name]));
-      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: f.color, roughness: 0.72, metalness: 0 }));
-      m.castShadow = true; m.receiveShadow = true;
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 24), new THREE.LineBasicMaterial({ color: 0x14131C, transparent: true, opacity: f.edges }));
-      m.add(edges);
-      meshes[name] = m; edgeLines[name] = edges;
-      f.group.add(m);
-    }
-    $("loading").hidden = true;
+  for (const [name, color, group] of [["base", 0xA9DEC6, baseGroup], ["lid", 0xC4B6F0, g1]]) {
+    if (!MODELS[name]) continue;
+    const geo = parseStl(decode(MODELS[name]));
+    const m = new THREE.Mesh(geo, mat(color, { roughness: 0.72 })); m.castShadow = true; m.receiveShadow = true;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 24), new THREE.LineBasicMaterial({ color: 0x14131C, transparent: true, opacity: 0.5 }));
+    m.add(edges); meshes[name] = m; edgeLines[name] = edges; group.add(m);
   }
 
-  // ------------------------------------------------------------ interactive parts built here
-  function onLid(u, v, top = true) {
-    const y = v * COS, z = (top ? L.h_front : Z_LID) + y * TAN;
-    const g = new THREE.Group(); g.position.set(u, y, z); g.rotation.x = SLOPE;
+  // ------------------------------------------------------------ the uno, in the base
+  const anchors = {};          // named 3d points wires attach to, in root space (base side) or lid local (lid side)
+  const UNO_TOP = { SCL: 17.4, SDA: 19.9, AREF: 22.5, GND: 25.0, D13: 27.5, D12: 30.1, D11: 32.6, D10: 35.2, D9: 37.7, D8: 40.3, D7: 44.1, D6: 46.6, D5: 49.2, D4: 51.7, D3: 54.3, D2: 56.8, TX: 59.3, RX: 61.9 };
+  const UNO_BOT = { NC: 22.9, IOREF: 25.4, RESET: 28.0, "3V3": 30.5, "5V": 33.0, GND1: 35.6, GND2: 38.1, VIN: 40.6, A0: 44.5, A1: 47.0, A2: 49.5, A3: 52.1, A4: 54.6, A5: 57.2 };
+  (function buildUno() {
+    const [ux, uy] = L.uno_at, z0 = L.floor + L.uno_standoff, [uw, ud] = L.uno;
+    const g = new THREE.Group(); g.position.set(ux, uy, z0);
+    const silk = texture(686, 533, (x, w, h) => {
+      x.fillStyle = "#2D8A9A"; x.fillRect(0, 0, w, h);
+      x.fillStyle = "rgba(255,255,255,.08)"; for (let i = 0; i < 40; i++) { x.fillRect(Math.random() * w, Math.random() * h, 40 + Math.random() * 120, 2); }
+      x.fillStyle = "#EEF6F7"; x.font = "bold 34px 'Segoe UI', sans-serif"; x.fillText("UNO", 300, 300); x.font = "22px 'Segoe UI', sans-serif"; x.fillText("MINI CASINO BUILD", 300, 332);
+      x.font = "bold 40px serif"; x.fillText("∞", 250, 306);
+      x.font = "13px 'Segoe UI', sans-serif";
+      const top = ["SCL", "SDA", "AREF", "GND", "13", "12", "~11", "~10", "~9", "8", "7", "~6", "~5", "4", "~3", "2", "TX", "RX"];
+      Object.values(UNO_TOP).forEach((px, i) => { x.save(); x.translate(px * 10, 470); x.rotate(-Math.PI / 2); x.fillText(top[i], 0, 0); x.restore(); });
+      const bot = ["", "IOREF", "RESET", "3.3V", "5V", "GND", "GND", "VIN", "A0", "A1", "A2", "A3", "A4", "A5"];
+      Object.values(UNO_BOT).forEach((px, i) => { x.save(); x.translate(px * 10 + 4, 60); x.rotate(-Math.PI / 2); x.fillText(bot[i], 0, 0); x.restore(); });
+      x.fillText("DIGITAL (PWM~)", 400, 445); x.fillText("POWER", 260, 88); x.fillText("ANALOG IN", 470, 88);
+    });
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(uw, ud, 1.6), [M.teal, M.teal, M.teal, M.teal, mat(0xffffff, { map: silk, roughness: 0.75 }), M.teal]);
+    pcb.position.set(uw / 2, ud / 2, 0.8); pcb.castShadow = true; pcb.receiveShadow = true; g.add(pcb);
+    L.uno_holes.forEach(([hx, hy]) => g.add(zcyl(1.6, 0.2, M.black, hx, hy, 1.7, 16)));
+    const usb = box(16.1, 12.2, 10.9, M.silver, -6.3 + 8.05, L.usb_y, 1.6 + 5.45); g.add(usb);
+    g.add(box(0.5, 8.5, 7, M.black, -6.35, L.usb_y, 1.6 + 5.45));
+    g.add(box(14, 9, 11, M.black, -1.9 + 7, L.jack_y, 1.6 + 5.5));
+    g.add(xcyl(3, 0.4, mat(0x0A0A10), -2.1, L.jack_y, 1.6 + 5.5, 20));
+    const mcu = box(35, 7.6, 4.3, M.black, 45, 17, 1.6 + 2.15); g.add(mcu);
+    g.add(zcyl(1.2, 0.3, M.dark, 28.5, 17, 1.6 + 4.4, 12));
+    g.add(box(11, 4.5, 3.5, M.silver, 23, 25, 1.6 + 1.75));
+    g.add(box(6, 6, 1, M.black, 15, 41, 2.1));
+    g.add(box(6.5, 4, 1.8, M.black, 16, 13, 2.5));
+    [[9, 9], [9, 33], [23, 33], [53, 45]].forEach(([cx, cy]) => g.add(zcyl(3.2, 5.5, mat(0x22212E), cx, cy, 1.6 + 2.75, 20)));
+    const reset = box(6, 6, 3.5, M.silver, 8, 46, 1.6 + 1.75); g.add(reset); g.add(zcyl(1.6, 1.8, mat(0xE2685F), 8, 46, 1.6 + 4.3, 16));
+    [[62, 40, 0x93D391], [62, 36, 0xF0C24E], [62, 32, 0xF0C24E]].forEach(([cx, cy, col]) => g.add(box(1.6, 0.8, 0.6, mat(col, { emissive: col, emissiveIntensity: 0.4 }), cx, cy, 1.9)));
+    g.add(header(10, 16.2, 50.8, 1.6)); g.add(header(8, 42.9, 50.8, 1.6));
+    g.add(header(8, 21.7, 2.5, 1.6)); g.add(header(6, 43.2, 2.5, 1.6));
+    g.add(header(3, 60, 20, 1.6, 2.54, 6)); g.add(header(3, 60, 22.54, 1.6, 2.54, 6));
+    electronics.add(g);
+    for (const [n, px] of Object.entries(UNO_TOP)) anchors["uno:" + n] = V3(ux + px, uy + 50.8, z0 + 1.6 + 8.5);
+    for (const [n, px] of Object.entries(UNO_BOT)) anchors["uno:" + n] = V3(ux + px, uy + 2.5, z0 + 1.6 + 8.5);
+  })();
+
+  // ------------------------------------------------------------ breadboard with resistors and the pot
+  const BB = { at: L.breadboard_at, cols: 30, x0: 5.9, pitch: 2.54, rows: { "-b": 4.0, "+b": 6.5, a: 12.5, b: 15.04, c: 17.58, d: 20.12, e: 22.66, f: 30.3, g: 32.84, h: 35.38, i: 37.92, j: 40.46, "+t": 46.6, "-t": 49.1 } };
+  function bbHole(col, row) { return V3(BB.at[0] + BB.x0 + (col - 1) * BB.pitch, BB.at[1] + BB.rows[row], L.floor + 9); }
+  (function buildBreadboard() {
+    const [bx, by] = L.breadboard_at, [bw, bd] = L.breadboard;
+    const g = new THREE.Group(); g.position.set(bx, by, L.floor);
+    const top = texture(830, 550, (x, w, h) => {
+      x.fillStyle = "#F1EBDC"; x.fillRect(0, 0, w, h);
+      x.fillStyle = "#E4DCC8"; x.fillRect(0, 250, w, 60);
+      x.strokeStyle = "#D9534F"; x.lineWidth = 3; x.beginPath(); x.moveTo(40, 80); x.lineTo(w - 40, 80); x.moveTo(40, 450); x.lineTo(w - 40, 450); x.stroke();
+      x.strokeStyle = "#3C6CC4"; x.beginPath(); x.moveTo(40, 26); x.lineTo(w - 40, 26); x.moveTo(40, 505); x.lineTo(w - 40, 505); x.stroke();
+      x.fillStyle = "#1E1D28";
+      for (let c = 1; c <= BB.cols; c++) for (const r of Object.values(BB.rows)) {
+        if ((r === BB.rows["-b"] || r === BB.rows["+b"] || r === BB.rows["+t"] || r === BB.rows["-t"]) && (c % 6 === 0)) continue;
+        x.fillRect((BB.x0 + (c - 1) * BB.pitch) * 10 - 5, h - r * 10 - 5, 10, 10);
+      }
+      x.fillStyle = "#7A7466"; x.font = "12px 'Segoe UI', sans-serif";
+      "abcdefghij".split("").forEach(r => x.fillText(r, 12, h - BB.rows[r] * 10 + 4));
+      for (let c = 1; c <= BB.cols; c += 5) x.fillText(String(c), (BB.x0 + (c - 1) * BB.pitch) * 10 - 4, h - 25.5 * 10);
+    });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(bw, bd, 9), [M.beige, M.beige, M.beige, M.beige, mat(0xffffff, { map: top, roughness: 0.85 }), M.beige]);
+    body.position.set(bw / 2, bd / 2, 4.5); body.castShadow = true; body.receiveShadow = true; g.add(body);
+    electronics.add(g);
+  })();
+  function resistorAcross(col, bands) {       // bridges the centre channel from row e to row f
+    const a = bbHole(col, "e"), b = bbHole(col, "f"), g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 6.4, 16), M.beige); body.castShadow = true;
+    g.add(body);
+    bands.forEach((col2, i) => { const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.7, 16), mat(col2, { roughness: 0.5 })); ring.position.y = -2.2 + i * 1.4; g.add(ring); });
+    g.position.set(a.x, (a.y + b.y) / 2, a.z + 2.6); g.rotation.set(0, 0, 0);
+    const leadA = zcyl(0.28, 3.2, M.pin, a.x, a.y, a.z + 1.2, 8), leadB = zcyl(0.28, 3.2, M.pin, b.x, b.y, b.z + 1.2, 8);
+    const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.1, 8), M.pin); bridge.rotation.x = 0;
+    electronics.add(g, leadA, leadB);
     return g;
   }
-  function zcyl(rTop, rBot, h, color, opts = {}) {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, 48), new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.55, metalness: 0 }, opts)));
-    m.rotation.x = Math.PI / 2; m.castShadow = true; m.receiveShadow = true;
-    return m;
-  }
-  const plungers = [], ledMeshes = [], glows = [];
-  const glowTex = (() => {
-    const c = document.createElement("canvas"); c.width = c.height = 128;
-    const x = c.getContext("2d"), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
-    g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(0.35, "rgba(255,255,255,.45)"); g.addColorStop(1, "rgba(255,255,255,0)");
-    x.fillStyle = g; x.fillRect(0, 0, 128, 128);
-    return new THREE.CanvasTexture(c);
+  const R330 = [0xF28C28, 0xF28C28, 0x8B5A2B, 0xD9B25A], R200 = [0xE2685F, 0x1E1D28, 0x8B5A2B, 0xD9B25A];
+  const RCOL = { led0: 3, led1: 6, led2: 9, buz: 12, bl: 15, pot: 22 };
+  resistorAcross(RCOL.led0, R330); resistorAcross(RCOL.led1, R330); resistorAcross(RCOL.led2, R330); resistorAcross(RCOL.buz, R330); resistorAcross(RCOL.bl, R200);
+  (function pot() {         // 10k trimmer on rows f..h, legs in columns 22, 23, 24
+    const p = bbHole(RCOL.pot + 1, "g");
+    const g = new THREE.Group(); g.position.set(p.x, p.y, p.z);
+    g.add(box(9.5, 9.5, 5, mat(0x3C6CC4, { roughness: 0.7 }), 0, 0, 2.5 + 1.5));
+    g.add(zcyl(2.3, 0.6, M.white, 0, 0, 7.3, 24)); g.add(box(3.6, 0.7, 0.5, M.dark, 0, 0, 7.7));
+    for (let i = -1; i <= 1; i++) g.add(zcyl(0.3, 2, M.pin, i * BB.pitch, -BB.pitch, 0.5, 8));
+    electronics.add(g);
   })();
+
+  // ------------------------------------------------------------ lid side: lcd, rc522, buttons, leds, buzzer
+  const plungers = [], ledMats = [], glows = [];
+  const glowTex = texture(128, 128, (x) => { const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(0.35, "rgba(255,255,255,.45)"); g.addColorStop(1, "rgba(255,255,255,0)"); x.fillStyle = g; x.fillRect(0, 0, 128, 128); });
+  const lidAnchors = {};      // name -> { group, local Vector3 }
   L.buttons.forEach(([u, v], i) => {
     const g = onLid(u, v);
-    const bezel = zcyl(16.5, 16.5, 2.4, 0x2A2937); bezel.position.z = 1.2; g.add(bezel);
-    const body = zcyl(L.button_hole / 2 - 0.6, L.button_hole / 2 - 0.6, 30, 0x2A2937); body.position.z = -15; g.add(body);
+    g.add(zcyl(16.5, 2.4, mat(0x2A2937, { roughness: 0.5 }), 0, 0, 1.2, 48));
+    g.add(zcyl(L.button_hole / 2 - 0.6, 24, M.dark, 0, 0, -12, 48));
+    g.add(zcyl(L.button_hole / 2 + 3, 3, M.dark, 0, 0, -6, 48));                                 // the nut under the lid
     const plunger = new THREE.Group(); plunger.position.z = 2.4;
-    const stem = zcyl(11.4, 11.4, 7.5, BTN_COL[i]); stem.position.z = 3.75; plunger.add(stem);
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(11.4, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), stem.material.clone());
-    dome.scale.z = 0.32; dome.position.z = 7.5; dome.castShadow = true; plunger.add(dome);
-    plunger.userData = { button: i, home: 2.4 };
-    stem.userData.button = i; dome.userData.button = i;
+    const stem = zcyl(11.4, 7.5, mat(BTN_COL[i], { roughness: 0.55 }), 0, 0, 3.75, 48); plunger.add(stem);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(11.4, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), stem.material); dome.scale.z = 0.32; dome.position.z = 7.5; dome.castShadow = true; plunger.add(dome);
+    plunger.userData = { button: i, home: 2.4 }; stem.userData.button = i; dome.userData.button = i;
     g.add(plunger); plungers.push(plunger);
+    g.add(box(12, 6.5, 10, M.black, 0, 0, -28));                                                  // microswitch
+    g.add(box(3.5, 0.6, 3, M.pin, -3.5, -3.5, -34.5)); g.add(box(3.5, 0.6, 3, M.pin, 3.5, -3.5, -34.5));
+    lidAnchors["btn" + i + ":com"] = { group: g, p: V3(-3.5, -3.8, -36.5) }; lidAnchors["btn" + i + ":no"] = { group: g, p: V3(3.5, -3.8, -36.5) };
     lidParts.add(g);
   });
   L.leds.forEach(([u, v], i) => {
     const g = onLid(u, v);
-    const mat = new THREE.MeshStandardMaterial({ color: LED_COL[i], emissive: LED_COL[i], emissiveIntensity: 0.08, roughness: 0.35 });
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 3.2, 32), mat); stem.rotation.x = Math.PI / 2; stem.position.z = 1.6;
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(2.5, 32, 16), mat); dome.position.z = 3.2;
-    const leg = zcyl(2.6, 2.6, 8, 0x2A2937); leg.position.z = -4;
+    const m = mat(LED_COL[i], { emissive: LED_COL[i], emissiveIntensity: 0.08, roughness: 0.35 });
+    g.add(zcyl(2.5, 3.2, m, 0, 0, 1.6)); const dome = new THREE.Mesh(new THREE.SphereGeometry(2.5, 32, 16), m); dome.position.z = 3.2; g.add(dome);
+    g.add(zcyl(2.9, 1, M.white, 0, 0, -0.5, 24));
+    g.add(zcyl(0.3, 12, M.pin, -1.27, 0, -7, 8)); g.add(zcyl(0.3, 10, M.pin, 1.27, 0, -6, 8));
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: LED_COL[i], transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
-    glow.position.z = 4; glow.scale.set(26, 26, 1);
-    g.add(stem, dome, leg, glow); lidParts.add(g);
-    ledMeshes.push(mat); glows.push(glow);
+    glow.position.z = 4; glow.scale.set(26, 26, 1); g.add(glow);
+    ledMats.push(m); glows.push(glow); lidParts.add(g);
+    lidAnchors["led" + i + ":a"] = { group: g, p: V3(-1.27, 0, -13) }; lidAnchors["led" + i + ":k"] = { group: g, p: V3(1.27, 0, -11) };
   });
-  // lcd: dark bezel and a canvas screen
   const lcdCanvas = document.createElement("canvas"); lcdCanvas.width = 640; lcdCanvas.height = 160;
   const lcdTex = new THREE.CanvasTexture(lcdCanvas); lcdTex.encoding = THREE.sRGBEncoding; lcdTex.anisotropy = 8;
-  {
-    const g = onLid(L.lcd_at[0], L.lcd_at[1]);
-    const bezel = new THREE.Mesh(new THREE.BoxGeometry(L.lcd_window[0] - 0.4, L.lcd_window[1] - 0.4, 1.2), new THREE.MeshStandardMaterial({ color: 0x1C1B27, roughness: 0.4 }));
-    bezel.position.z = -0.6;
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(64.5, 16), new THREE.MeshBasicMaterial({ map: lcdTex, toneMapped: false }));
-    screen.position.z = 0.02;
-    g.add(bezel, screen); lidParts.add(g);
-  }
-  // tap zone and a floating card
+  (function lcdModule() {
+    const top = onLid(L.lcd_at[0], L.lcd_at[1]);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(64.5, 16), new THREE.MeshBasicMaterial({ map: lcdTex, toneMapped: false })); screen.position.z = 0.03; top.add(screen);
+    top.add(box(L.lcd_window[0] - 0.4, L.lcd_window[1] - 0.4, 0.02, M.black, 0, 0, 0.005));
+    lidParts.add(top);
+    const g = onLid(L.lcd_at[0], L.lcd_at[1], false), s = L.lcd_standoff;
+    g.add(box(80, 36, 1.6, M.green, 0, 0, -s - 0.8));
+    g.add(box(L.lcd_window[0] - 0.4, L.lcd_window[1] - 0.4, s, M.black, 0, 0, -s / 2));
+    L.lcd_holes && [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => g.add(zcyl(1.3, 0.2, M.pin, a * L.lcd_holes[0] / 2, b * L.lcd_holes[1] / 2, -s - 1.7, 12)));
+    const hx0 = -37, hy = 16.2, hz = -s - 1.6;
+    g.add(box(40.6, 2.54, 2.5, M.black, hx0 + 20.3, hy, hz - 1.25));
+    g.add(pinRow(16, hx0, hy, hz - 2.5, 6));
+    for (let i = 0; i < 16; i++) lidAnchors["lcd:" + i] = { group: g, p: V3(hx0 + 1.27 + i * 2.54, hy, hz - 8.5) };
+    g.add(box(3, 12, 1.2, M.black, 30, 0, -s - 2.2));
+    lidParts.add(g);
+  })();
+  (function rc522() {
+    const g = onLid(L.rc522_at[0], L.rc522_at[1], false), [rw, rd] = L.rc522;
+    const antenna = texture(400, 600, (x, w, h) => {
+      x.fillStyle = "#2B5FA8"; x.fillRect(0, 0, w, h);
+      x.strokeStyle = "#E9EEF7"; x.lineWidth = 7;
+      for (let k = 0; k < 4; k++) { const m = 28 + k * 16; x.strokeRect(m, m + 60, w - 2 * m, h - 2 * m - 120); }
+      x.fillStyle = "#E9EEF7"; x.font = "bold 22px 'Segoe UI', sans-serif"; x.fillText("RFID-RC522", 120, 40);
+      x.fillStyle = "#D9B25A"; for (let i = 0; i < 8; i++) x.fillRect(102 + i * 25.4, h - 24, 12, 12);
+    });
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(rw, rd, 1.6), [M.blue, M.blue, M.blue, M.blue, mat(0xffffff, { map: antenna, roughness: 0.75 }), M.blue]);
+    pcb.position.z = -1.0; pcb.castShadow = true; pcb.receiveShadow = true; g.add(pcb);
+    g.add(box(5, 5, 1, M.black, 0, -12, -2.3)); g.add(box(4, 2, 1, M.silver, 8, -14, -2.3)); g.add(box(3, 2, 1.2, M.silver, -8, -14, -2.4));
+    [[-10, -22], [10, -22], [0, -18]].forEach(([cx, cy]) => g.add(box(1.6, 0.8, 0.6, M.beige, cx, cy, -2.1)));
+    const hx0 = -10.16, hy = -rd / 2 + 1.3, hz = -1.8;
+    g.add(box(20.32, 2.54, 2.5, M.black, 0, hy, hz - 1.25)); g.add(pinRow(8, hx0, hy, hz - 2.5, 8));
+    ["SDA", "SCK", "MOSI", "MISO", "IRQ", "GND", "RST", "3V3"].forEach((n, i) => { lidAnchors["rc:" + n] = { group: g, p: V3(hx0 + 1.27 + i * 2.54, hy, hz - 10.5) }; });
+    lidParts.add(g);
+  })();
+  (function buzzer() {
+    const g = onLid(L.buzzer_at[0], L.buzzer_at[1], false), r = L.buzzer_d / 2 - 0.2;
+    g.add(zcyl(r, 9.5, M.black, 0, 0, -4.95, 40)); g.add(zcyl(1.5, 0.3, mat(0x0A0A10), 0, 0, -0.1, 12));
+    g.add(box(22, 12, 1.6, M.green, 0, 0, -10.5));
+    g.add(pinRow(3, -3.81, -4, -11.3, 6));
+    g.add(box(3, 1.6, 2.2, M.black, -6.5, 3, -12.4));
+    lidAnchors["buz:s"] = { group: g, p: V3(-2.54, -4, -17.3) }; lidAnchors["buz:-"] = { group: g, p: V3(2.54, -4, -17.3) };
+    lidParts.add(g);
+  })();
   const tapZone = (() => {
     const g = onLid(L.rc522_at[0], L.rc522_at[1]);
     const m = new THREE.Mesh(new THREE.PlaneGeometry(52, 34), new THREE.MeshBasicMaterial({ color: 0x8DB9E9, transparent: true, opacity: 0, depthWrite: false }));
-    m.position.z = 0.3; m.userData.tap = true; g.add(m);
-    const card = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(54, 85.6, 0.8), new THREE.MeshStandardMaterial({ color: 0xFFC6A3, roughness: 0.6 }));
-    body.castShadow = true; card.add(body);
-    const chip = new THREE.Mesh(new THREE.BoxGeometry(11, 9, 0.3), new THREE.MeshStandardMaterial({ color: 0xF7D37B, roughness: 0.3, metalness: 0.4 }));
-    chip.position.set(-15, 22, 0.5); card.add(chip);
-    card.position.z = 26; card.rotation.z = -0.12; card.userData.home = 26;
-    g.add(card);
-    return { zone: m, card, group: g };
+    m.position.z = 0.3; m.userData.tap = true; g.add(m); lidParts.add(g);
+    return { zone: m, group: g };
   })();
+
+  // ------------------------------------------------------------ transponders
+  function roundedRect(w, h, r) { const s = new THREE.Shape(); s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.absarc(w / 2 - r, -h / 2 + r, r, -Math.PI / 2, 0, false); s.lineTo(w / 2, h / 2 - r); s.absarc(w / 2 - r, h / 2 - r, r, 0, Math.PI / 2, false); s.lineTo(-w / 2 + r, h / 2); s.absarc(-w / 2 + r, h / 2 - r, r, Math.PI / 2, Math.PI, false); s.lineTo(-w / 2, -h / 2 + r); s.absarc(-w / 2 + r, -h / 2 + r, r, Math.PI, Math.PI * 1.5, false); return s; }
+  function isoCard(color, name, uid) {
+    const w = 85.6, h = 54;
+    const face = texture(856, 540, (x, W, H) => {
+      const grad = x.createLinearGradient(0, 0, W, H); grad.addColorStop(0, color); grad.addColorStop(1, "#ffffff"); x.fillStyle = grad; x.fillRect(0, 0, W, H);
+      x.strokeStyle = "rgba(255,255,255,.55)"; x.lineWidth = 4; for (let k = 0; k < 3; k++) x.strokeRect(70 + k * 26, 60 + k * 26, W - 140 - k * 52, H - 120 - k * 52);
+      x.fillStyle = "#3E3A4F"; x.font = "800 64px 'Segoe UI', sans-serif"; x.fillText("mini casino", 70, 150);
+      x.font = "600 30px 'Segoe UI', sans-serif"; x.fillText(name, 70, 200);
+      x.font = "28px Consolas, monospace"; x.fillText("uid " + uid, 70, 470); x.font = "24px 'Segoe UI', sans-serif"; x.fillText("mifare classic 1k · 13.56 mhz", 70, 420);
+      x.fillStyle = "#D9B25A"; x.beginPath(); x.roundRect ? x.roundRect(660, 80, 120, 96, 14) : x.rect(660, 80, 120, 96); x.fill();
+      x.strokeStyle = "#B8933F"; x.lineWidth = 3; x.beginPath(); x.moveTo(660, 112); x.lineTo(780, 112); x.moveTo(660, 144); x.lineTo(780, 144); x.moveTo(720, 80); x.lineTo(720, 176); x.stroke();
+    });
+    face.repeat.set(1 / w, 1 / h); face.offset.set(0.5, 0.5);
+    const geo = new THREE.ExtrudeGeometry(roundedRect(w, h, 3.2), { depth: 0.8, bevelEnabled: false });
+    const m = new THREE.Mesh(geo, [mat(0xffffff, { map: face, roughness: 0.55 }), mat(color, { roughness: 0.6 })]);
+    m.castShadow = true; const g = new THREE.Group(); g.add(m); g.userData.tap = true; return g;
+  }
+  function keyfob(color, uid) {
+    const s = new THREE.Shape(); const r = 15, a = 65 * Math.PI / 180;
+    s.absarc(0, 0, r, Math.PI - a, a, true);
+    s.lineTo(6.5, 24); s.absarc(0, 24, 6.5, 0, Math.PI, false); s.lineTo(-r * Math.cos(a), r * Math.sin(a));
+    const hole = new THREE.Path(); hole.absarc(0, 24, 2.6, 0, Math.PI * 2, true); s.holes.push(hole);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 3.2, bevelEnabled: true, bevelThickness: 0.6, bevelSize: 0.6, bevelSegments: 3 });
+    const body = new THREE.Mesh(geo, mat(color, { roughness: 0.55 })); body.castShadow = true;
+    const coil = new THREE.Mesh(new THREE.TorusGeometry(11, 0.45, 8, 48), mat(color, { roughness: 0.4 })); coil.position.z = 3.9; coil.scale.set(1, 1, 0.6);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(7, 0.7, 10, 40), M.silver); ring.position.set(0, 27.5, 1.6); ring.rotation.x = Math.PI / 2;
+    const text = new THREE.Mesh(new THREE.PlaneGeometry(18, 6), new THREE.MeshBasicMaterial({ map: texture(180, 60, (x) => { x.fillStyle = "rgba(0,0,0,0)"; x.clearRect(0, 0, 180, 60); x.fillStyle = "rgba(62,58,79,.8)"; x.font = "bold 20px Consolas, monospace"; x.fillText(uid.slice(0, 8), 6, 38); }), transparent: true }));
+    text.position.set(0, -4, 3.95);
+    const g = new THREE.Group(); g.add(body, coil, ring, text); g.userData.tap = true; return g;
+  }
+  function sticker(uid) {
+    const g = new THREE.Group(); const d = new THREE.Mesh(new THREE.CylinderGeometry(12.5, 12.5, 0.3, 48), M.white); d.rotation.x = Math.PI / 2; d.position.z = 0.15; g.add(d);
+    const coil = new THREE.Mesh(new THREE.TorusGeometry(9.5, 0.35, 6, 48), mat(0xB8BCC8, { metalness: 0.5, roughness: 0.4 })); coil.position.z = 0.35; g.add(coil); g.userData.tap = true; return g;
+  }
+  const TRANSPONDERS = [
+    { uid: "DF51AA39", name: "card 1", kind: "card", color: "#FFC6A3" },
+    { uid: "0885B1A8", name: "card 2", kind: "card", color: "#A9DEC6" },
+    { uid: "049F905C110189", name: "fob 3", kind: "fob", color: "#6FA8E8" },
+    { uid: "04CABD5C110189", name: "fob 4", kind: "fob", color: "#B7A8F0" },
+  ];
+  const tagModels = {};
+  const hover = onLid(L.rc522_at[0], L.rc522_at[1]); lidParts.add(hover);
+  TRANSPONDERS.forEach(t => {
+    const g = t.kind === "card" ? isoCard(t.color, t.name, t.uid) : keyfob(parseInt(t.color.slice(1), 16), t.uid);
+    g.userData.uid = t.uid; g.visible = false; hover.add(g); tagModels[t.uid] = g;
+  });
+  const genericTag = sticker(""); genericTag.visible = false; hover.add(genericTag);
+  let shownTag = null;
+  function showTag(uid) {
+    Object.values(tagModels).forEach(m => { m.visible = false; }); genericTag.visible = false;
+    shownTag = tagModels[uid] || genericTag; shownTag.visible = true;
+  }
+
+  // ------------------------------------------------------------ wires
+  let explodeValue = 0;
+  function lidPoint(name) {
+    const a = lidAnchors[name]; a.group.updateMatrixWorld(true);
+    const v = a.p.clone(); a.group.localToWorld(v); root.worldToLocal(v); return v;
+  }
+  const rnd = (i, k) => (Math.sin(i * 12.9898 + k * 78.233) * 43758.5453) % 1;
+  const WIRES = [];
+  function W(from, to, color, opts = {}) { WIRES.push({ from, to, color, opts }); }
+  // rc522
+  [["D10", "SDA"], ["D13", "SCK"], ["D11", "MOSI"], ["D12", "MISO"], ["D9", "RST"]].forEach(([u, r], k) => W("uno:" + u, "rc:" + r, WIRE.rfid, { via: [118 + k, 74, 33] }));
+  W("uno:GND", "rc:GND", WIRE.gnd, { via: [124, 76, 35] }); W("uno:3V3", "rc:3V3", WIRE.v33, { via: [112, 70, 31] });
+  // lcd data and power (the pot sits in columns 22 to 24, its wiper is the middle leg)
+  [["D8", 3], ["D7", 5], ["D6", 10], ["D5", 11], ["D4", 12], ["D3", 13]].forEach(([u, p]) => W("uno:" + u, "lcd:" + p, WIRE.lcd, { lift: 12 }));
+  W("bb:1:-t", "lcd:0", WIRE.gnd); W("bb:2:+t", "lcd:1", WIRE.v5); W("bb:" + (RCOL.pot + 1) + ":j", "lcd:2", WIRE.lcd); W("bb:3:-t", "lcd:4", WIRE.gnd);
+  W("bb:" + RCOL.bl + ":j", "lcd:14", WIRE.v5); W("bb:" + RCOL.bl + ":a", "bb:4:+b", WIRE.v5, { low: true }); W("bb:4:-t", "lcd:15", WIRE.gnd);
+  W("bb:" + RCOL.pot + ":h", "bb:5:+t", WIRE.v5, { low: true }); W("bb:" + (RCOL.pot + 2) + ":h", "bb:7:-t", WIRE.gnd, { low: true });
+  // buttons
+  ["A0", "A1", "A2"].forEach((a, i) => { W("uno:" + a, "btn" + i + ":no", WIRE.btn, { via: [40 + i * 36, 45, 20] }); W("btn" + i + ":com", "bb:" + (7 + i) + ":-b", WIRE.gnd, { via: [50 + i * 30, 46, 12] }); });
+  // leds through their resistors
+  ["A3", "A4", "A5"].forEach((a, i) => { const c = [RCOL.led0, RCOL.led1, RCOL.led2][i]; W("uno:" + a, "bb:" + c + ":a", WIRE.led[i], { low: true }); W("bb:" + c + ":j", "led" + i + ":a", WIRE.led[i], { lift: 14 }); W("led" + i + ":k", "bb:" + [16, 17, 19][i] + ":-t", WIRE.gnd, { lift: 10 }); });
+  // buzzer and rails
+  W("uno:D2", "bb:" + RCOL.buz + ":a", WIRE.buz, { low: true }); W("bb:" + RCOL.buz + ":j", "buz:s", WIRE.buz, { lift: 12 }); W("buz:-", "bb:13:-t", WIRE.gnd, { lift: 12 });
+  W("uno:5V", "bb:1:+b", WIRE.v5, { low: true }); W("uno:GND1", "bb:2:-b", WIRE.gnd, { low: true }); W("bb:28:+b", "bb:28:+t", WIRE.v5, { low: true }); W("bb:29:-b", "bb:29:-t", WIRE.gnd, { low: true });
+  function resolve(name) {
+    if (name.startsWith("uno:")) return { p: anchors[name].clone(), side: "base", dir: 1 };
+    if (name.startsWith("bb:")) { const [, c, r] = name.split(":"); return { p: bbHole(parseInt(c), r), side: "base", dir: 1 }; }
+    return { p: lidPoint(name), side: "lid", dir: -1 };
+  }
+  const wireMeshes = [];
+  function buildWires() {
+    wireMeshes.forEach(m => { m.geometry.dispose(); wireGroup.remove(m); }); wireMeshes.length = 0;
+    const n = V3(0, -SIN, COS).multiplyScalar(90 * explodeValue);
+    WIRES.forEach((w, i) => {
+      const a = resolve(w.from), b = resolve(w.to);
+      if (a.side === "lid") a.p.add(n); if (b.side === "lid") b.p.add(n);
+      const pts = [a.p.clone()];
+      const lift = w.opts.lift || (w.opts.low ? 5 : 9), jx = (rnd(i, 1) - 0.5) * 3, jy = (rnd(i, 2) - 0.5) * 3;
+      pts.push(a.p.clone().add(V3(0, 0, a.dir * lift)));
+      if (w.opts.via) { const v = w.opts.via; pts.push(V3(v[0] + jx, v[1] + jy, v[2] + (a.side === "lid" ? n.z : 0))); }
+      else if (!w.opts.low) pts.push(V3((a.p.x + b.p.x) / 2 + jx, (a.p.y + b.p.y) / 2 + jy, Math.max(a.p.z + a.dir * lift, b.p.z + b.dir * lift) + 4));
+      pts.push(b.p.clone().add(V3(0, 0, b.dir * (w.opts.lift || 8))));
+      pts.push(b.p.clone());
+      const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal", 0.6);
+      const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.62, 7, false), mat(w.color, { roughness: 0.45 }));
+      m.castShadow = true; wireGroup.add(m); wireMeshes.push(m);
+    });
+  }
 
   // ------------------------------------------------------------ lcd drawing
   const lcdLines = ["Mini Casino v10", "Karte auflegen"];
@@ -353,8 +653,7 @@ Karte auflegen  </div>
   function drawLcd() {
     const x = lcdCanvas.getContext("2d");
     x.fillStyle = "#262538"; x.fillRect(0, 0, 640, 160);
-    x.font = "600 44px ui-monospace, Consolas, 'Courier New', monospace";
-    x.textBaseline = "middle";
+    x.font = "600 44px ui-monospace, Consolas, 'Courier New', monospace"; x.textBaseline = "middle";
     for (let r = 0; r < 2; r++) {
       const line = pad(lcdLines[r]);
       for (let c = 0; c < 16; c++) {
@@ -370,21 +669,15 @@ Karte auflegen  </div>
   function lcdSet(a, b) { if (a !== undefined) lcdLines[0] = a; if (b !== undefined) lcdLines[1] = b; drawLcd(); }
   drawLcd();
 
-  // ------------------------------------------------------------ audio, a square wave like the piezo
+  // ------------------------------------------------------------ audio
   let ac = null;
-  function audio() {
-    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
-    if (ac && ac.state === "suspended") ac.resume();
-    return ac;
-  }
+  function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } } if (ac && ac.state === "suspended") ac.resume(); return ac; }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   function tone(hz, ms) {
     const a = audio(); if (!a || tonStufe === 2) return;
-    const gain = tonStufe === 1 ? 0.045 : 0.18;
-    const o = a.createOscillator(), g = a.createGain(), t = a.currentTime, d = ms / 1000;
+    const gain = tonStufe === 1 ? 0.045 : 0.18, o = a.createOscillator(), g = a.createGain(), t = a.currentTime, d = ms / 1000;
     o.type = "square"; o.frequency.value = hz;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.003);
-    g.gain.setValueAtTime(gain, t + Math.max(0.004, d - 0.004)); g.gain.linearRampToValueAtTime(0, t + d);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.003); g.gain.setValueAtTime(gain, t + Math.max(0.004, d - 0.004)); g.gain.linearRampToValueAtTime(0, t + d);
     o.connect(g).connect(a.destination); o.start(t); o.stop(t + d + 0.02);
   }
   async function tonSpiele(hz, ms) { tone(hz, ms); await sleep(ms); }
@@ -392,191 +685,150 @@ Karte auflegen  </div>
   const LOSS_SOUND = [[440, 130, 45], [330, 180, 50], [220, 300, 80], [165, 230, 50]];
   const JACKPOT_SOUND = [[784, 90, 30], [1047, 140, 65], [784, 90, 30], [1047, 140, 65], [784, 90, 30], [1568, 250, 90], [1047, 75, 20], [1319, 75, 20], [1568, 75, 20], [2093, 140, 45], [1568, 100, 30], [2093, 360, 90]];
 
-  // ------------------------------------------------------------ serial log
+  // ------------------------------------------------------------ serial stream, shown in both monitors
   const t0 = performance.now();
-  function log(tag, text) {
-    const el = $("log");
-    el.textContent += `[${Math.round(performance.now() - t0)} ms] ${tag} | ${text}\n`;
-    const lines = el.textContent.split("\n");
-    if (lines.length > 80) el.textContent = lines.slice(lines.length - 80).join("\n");
-    el.scrollTop = el.scrollHeight;
+  function serial(line, cls) {
+    for (const id of ["log", "console"]) {
+      const el = $(id), span = document.createElement("span");
+      if (cls) span.className = cls; span.textContent = line + "\n"; el.appendChild(span);
+      while (el.childNodes.length > 120) el.removeChild(el.firstChild);
+      el.scrollTop = el.scrollHeight;
+    }
   }
-  log("BOOT", "Mini Casino v10 | 115200 Baud | LCD 8,7,6,5,4,3");
-  log("MODUS", "Konten im EEPROM. Karte nur als Ausweis, Spiel ueber Tasten.");
-  log("SIM", "Ohne RC522. Vier Karten stehen rechts, Tap Zone auf dem Modell.");
+  const log = (tag, text) => serial(`[${Math.round(performance.now() - t0)} ms] ${tag} | ${text}`);
+  const reply = text => serial(text, text.startsWith("#ERR") ? "err" : "resp");
 
-  // ------------------------------------------------------------ accounts (four cards, like wokwi)
-  const STAKE = 10, STAKE_STEP = 10, STAKE_MAX = 2550, START = 100, SESSION_MS = 60000;
-  const DEFAULT_CARDS = [
-    { uid: "DF51AA39", name: "card 1, classic" }, { uid: "0885B1A8", name: "card 2, classic" },
-    { uid: "049F905C110189", name: "card 3, ultralight" }, { uid: "04CABD5C110189", name: "card 4, ultralight" },
-  ];
-  let cards;
-  function loadCards() {
-    try { const s = JSON.parse(localStorage.getItem("minicasino-sim") || "null"); if (s && s.length === 4) return s; } catch (e) {}
-    return DEFAULT_CARDS.map(c => ({ uid: c.uid, name: c.name, funded: false, balance: 0, stake: 0 }));
+  // ------------------------------------------------------------ the uid registry, 31 slots like the eeprom
+  const CAPACITY = 31, STAKE = 10, STAKE_STEP = 10, STAKE_MAX = 2550, START = 100, SESSION_MS = 60000;
+  let slots, tonStufe = 0;
+  function load() {
+    try { const s = JSON.parse(localStorage.getItem("minicasino-sim-v2") || "null"); if (s && s.slots) { slots = s.slots; tonStufe = s.sound || 0; return; } } catch (e) {}
+    slots = Array(CAPACITY).fill(null);
   }
-  function saveCards() { try { localStorage.setItem("minicasino-sim", JSON.stringify(cards)); } catch (e) {} }
-  cards = loadCards();
-  let selected = 0;
-  function renderCards() {
-    const box = $("cards"); box.innerHTML = "";
-    cards.forEach((c, i) => {
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "card" + (i === selected ? " selected" : "") + (c.funded ? " funded" : "");
-      b.id = "card" + i;
-      b.innerHTML = `<span>${c.name}</span><small>${c.uid}</small><b>${c.funded ? c.balance : "new"}</b>`;
-      b.addEventListener("click", () => { selected = i; renderCards(); tapCard(); });
-      box.appendChild(b);
-    });
-  }
-  renderCards();
-  $("reset").addEventListener("click", () => {
-    cards = DEFAULT_CARDS.map(c => ({ uid: c.uid, name: c.name, funded: false, balance: 0, stake: 0 }));
-    saveCards(); if (session.active) beendeSitzung(true); renderCards(); log("EEPROM", "GELOESCHT: alle Konten zurueckgesetzt (nur Simulation).");
-  });
+  function save() { try { localStorage.setItem("minicasino-sim-v2", JSON.stringify({ slots, sound: tonStufe })); } catch (e) {} }
+  load();
+  const find = uid => slots.findIndex(s => s && s.uid === uid);
+  function reserve(uid) { const i = slots.findIndex(s => !s); if (i < 0) return -3; slots[i] = { uid, funded: false, balance: 0, stakeUnits: 0, flag: 0 }; return i; }
+  const used = () => slots.filter(Boolean).length;
+  const stakeOf = s => s.stakeUnits ? s.stakeUnits * STAKE_STEP : STAKE;
+  const stakeLimit = bal => bal < STAKE_STEP ? STAKE_STEP : Math.floor(Math.min(bal, STAKE_MAX) / STAKE_STEP) * STAKE_STEP;
+  const nameOf = uid => (TRANSPONDERS.find(t => t.uid === uid) || {}).name || uid;
 
   // ------------------------------------------------------------ game state, a port of GameRuntime.h
-  const session = { active: false, card: -1, since: 0, balance: 0, stake: STAKE };
-  let tonStufe = 0;                 // 0 loud, 1 quiet, 2 off
-  let busy = false;                 // spin or jingle running, inputs wait
-  let resultUntil = 0;              // result stays on the lcd until then
-  const leds = [0, 0, 0];           // target brightness 0..1
-  let idleStep = 0, idleAt = 0, blinkAt = 0, blinkOn = false;
+  const session = { active: false, slot: -1, since: 0, balance: 0, stake: STAKE, unlimited: false };
+  let busy = false, resultUntil = 0, selected = 0;
+  const leds = [0, 0, 0]; let idleStep = 0, idleAt = 0, blinkAt = 0, blinkOn = false;
   const hold = { mask: 0, since: 0, done: false, bar: 255, pulse: 0, bright: false };
   const einsatz = { loop: false, fein: false, taste: 0, wahl: 0, stepAt: 0, last: 0, holdSince: 0, led: 0 };
   const down = [false, false, false];
-
-  const farbe = i => ["SCHWARZ", "ROT", "GRUEN"][i];
-  const stufenName = s => ["Ton laut", "Ton leise", "Ton aus"][s];
-  const stakeLimit = bal => bal < STAKE_STEP ? STAKE_STEP : Math.floor(Math.min(bal, STAKE_MAX) / STAKE_STEP) * STAKE_STEP;
+  const farbe = i => ["SCHWARZ", "ROT", "GRUEN"][i], stufenName = s => ["Ton laut", "Ton leise", "Ton aus"][s];
   function ledZeige(muster) { for (let i = 0; i < 3; i++) leds[i] = (muster === 4 || muster === i) ? 1 : 0; }
-  function menuLcd() {
-    if (!session.active) { lcdSet("Mini Casino v10", "Karte auflegen"); return; }
-    lcdSet(session.stake + "€: S/R/G", session.balance + "€");
-  }
+  const money = v => session.unlimited ? "inf" : v + "€";
+  function menuLcd() { if (!session.active) { lcdSet("Mini Casino v10", "Karte auflegen"); return; } lcdSet(session.stake + "€: S/R/G", money(session.balance)); }
   function status() {
-    $("st-session").textContent = session.active ? `${cards[session.card].name.split(",")[0]}, ${Math.max(0, Math.ceil((SESSION_MS - (performance.now() - session.since)) / 1000))} s` : "none";
-    $("st-stake").textContent = session.stake + "€";
-    $("st-sound").textContent = ["loud", "quiet", "off"][tonStufe];
+    $("st-session").textContent = session.active ? `${nameOf(slots[session.slot].uid)}, ${Math.max(0, Math.ceil((SESSION_MS - (performance.now() - session.since)) / 1000))} s` : "none";
+    $("st-stake").textContent = session.stake + "€"; $("st-sound").textContent = ["loud", "quiet", "off"][tonStufe];
+    $("sound").value = String(tonStufe);
   }
-  function tapCard() {
-    audio();
-    const i = selected, c = cards[i];
-    bounceCard();
-    log("UID", c.uid.match(/../g).join(" "));
-    if (session.active && session.card === i) { session.since = performance.now(); log("SCAN", "Karte der laufenden Sitzung; Sitzung verlaengert."); status(); return; }
+  function renderCards() {
+    const box = $("cards"); box.innerHTML = "";
+    TRANSPONDERS.forEach((t, i) => {
+      const s = slots[find(t.uid)], b = document.createElement("button");
+      b.type = "button"; b.className = "card" + (i === selected ? " selected" : "") + (s && s.funded ? " funded" : ""); b.id = "tag" + i;
+      const flag = s ? (s.flag === 1 ? "banned" : s.flag === 2 ? "admin ∞" : "") : "";
+      b.innerHTML = `<i style="background:${t.color}"></i><span>${t.name}, ${t.kind === "card" ? "mifare classic card" : "ultralight fob"}</span><small>${t.uid}</small>` + (flag ? `<span class="flag">${flag}</span>` : `<b>${s && s.funded ? s.balance : "new"}</b>`);
+      b.addEventListener("click", () => { selected = i; renderCards(); tapCard(); });
+      box.appendChild(b);
+    });
+    showTag(TRANSPONDERS[selected].uid);
+    renderAdmin();
+  }
+  // the card reader path: bearbeiteKarte() in MiniCasino.ino
+  function legeKarteAuf(uid) {
+    audio(); bounce();
+    log("UID", uid.match(/../g).join(" "));
+    let slot = find(uid);
+    if (session.active && slot === session.slot) { session.since = performance.now(); status(); return; }
     if (busy) return;
-    if (!c.funded) { c.funded = true; c.balance = START; c.stake = 0; saveCards(); log("UID-LISTE", "Neue UID dauerhaft registriert."); log("KONTO", "Einmaliges Startguthaben gutgeschrieben."); log("GUTHABEN", "Neu gespeichert und geprueft: " + START); }
-    else log("KONTO", "Bekannte UID; Guthaben aus dem EEPROM geladen.") || log("GUTHABEN", "Vorhanden: " + c.balance);
-    starteSitzung(i);
-    renderCards();
+    if (slot >= 0 && slots[slot].flag === 1) { log("KONTO", "Karte ist gesperrt. Keine Sitzung, kein Zugriff aufs Guthaben."); lcdSet("Karte gesperrt", "Siehe Admin"); resultUntil = performance.now() + 5000; return; }
+    let neu = false;
+    if (slot < 0) {
+      slot = reserve(uid);
+      if (slot < 0) { log("UID-LISTE", "Keine Reservierung moeglich; Liste voll oder ungueltig."); lcdSet("UID-Liste voll", "Nicht aufgeladen"); resultUntil = performance.now() + 5000; return; }
+      neu = true; log("UID-LISTE", "Neue UID dauerhaft registriert.");
+    }
+    if (!slots[slot].funded) { slots[slot].funded = true; slots[slot].balance = START; log("KONTO", neu ? "Einmaliges Startguthaben gutgeschrieben." : "Offene Erstgutschrift nachgeholt."); log("GUTHABEN", "Neu gespeichert und geprueft: " + START); }
+    else { log("KONTO", "Bekannte UID; Guthaben aus dem EEPROM geladen."); log("GUTHABEN", "Vorhanden: " + slots[slot].balance); }
+    save(); starteSitzung(slot); renderCards();
   }
-  function starteSitzung(i) {
-    ledZeige(3);
-    session.active = true; session.card = i; session.balance = cards[i].balance; session.since = performance.now();
-    session.stake = cards[i].stake ? cards[i].stake : STAKE;
-    const grenze = stakeLimit(session.balance);
+  function tapCard() { legeKarteAuf(TRANSPONDERS[selected].uid); }
+  function starteSitzung(slot) {
+    ledZeige(3); const s = slots[slot];
+    session.active = true; session.slot = slot; session.balance = s.balance; session.since = performance.now(); session.unlimited = s.flag === 2;
+    session.stake = stakeOf(s);
+    const grenze = stakeLimit(session.unlimited ? STAKE_MAX : s.balance);
     if (session.stake > grenze) { session.stake = grenze; log("EINSATZ", "Gemerkter Einsatz ueber dem Guthaben; auf das Maximum gesetzt."); }
-    resultUntil = 0;
-    menuLcd(); status();
-    log("LCD", session.stake + ": S/R/G / " + session.balance);
+    resultUntil = 0; menuLcd(); status(); log("LCD", session.stake + ": S/R/G / " + (session.unlimited ? "inf" : session.balance));
   }
   function beendeSitzung(manuell) {
-    session.active = false; session.card = -1; ledZeige(3);
+    session.active = false; session.slot = -1; session.unlimited = false; ledZeige(3);
     log("SITZUNG", manuell ? "Von Hand abgemeldet." : "Zeit abgelaufen. Zum Weiterspielen Karte erneut kurz auflegen.");
-    if (manuell) { lcdSet("Abgemeldet", "Karte auflegen"); resultUntil = performance.now() + 5000; }
-    else menuLcd();
-    status();
+    if (manuell) { lcdSet("Abgemeldet", "Karte auflegen"); resultUntil = performance.now() + 5000; } else menuLcd();
+    status(); renderAdmin();
   }
-  function bounceCard() {
-    const c = tapZone.card; c.userData.bounce = performance.now();
-  }
-  async function halteQuittung(hz) {
-    for (let i = 0; i < 3; i++) { ledZeige(4); await tonSpiele(hz, 40); await sleep(30); ledZeige(3); await sleep(70); }
-  }
-  async function tonStufeWeiter() {
-    tonStufe = (tonStufe + 1) % 3;
-    log("TON", stufenName(tonStufe) + " | im EEPROM gespeichert.");
-    lcdSet(stufenName(tonStufe), "gespeichert");
-    status();
-    await halteQuittung(tonStufe === 2 ? 400 : 1400);
-  }
+  function bounce() { hover.userData.bounce = performance.now(); }
+  async function halteQuittung(hz) { for (let i = 0; i < 3; i++) { ledZeige(4); await tonSpiele(hz, 40); await sleep(30); ledZeige(3); await sleep(70); } }
+  async function tonStufeWeiter() { tonStufe = (tonStufe + 1) % 3; save(); log("TON", stufenName(tonStufe) + " | im EEPROM gespeichert."); lcdSet(stufenName(tonStufe), "gespeichert"); status(); await halteQuittung(tonStufe === 2 ? 400 : 1400); }
   async function spiele(choice) {
     if (!session.active) { lcdSet("Zuerst Karte", "kurz auflegen"); resultUntil = performance.now() + 5000; return; }
     session.since = performance.now();
-    const balance = cards[session.card].balance;
-    session.balance = balance;
-    if (balance < session.stake) { lcdSet("Zu wenig Guthaben", "Schwarz halten"); resultUntil = performance.now() + 5000; return; }
+    const s = slots[session.slot]; if (!s) { session.active = false; lcdSet("Konto unklar", "Karte auflegen"); return; }
+    const balance = s.balance; session.balance = balance;
+    if (!session.unlimited && balance < session.stake) { lcdSet("Zu wenig Guthaben", "Schwarz halten"); resultUntil = performance.now() + 5000; return; }
     busy = true;
     const result = (() => { const t = Math.floor(Math.random() * 100); return t < 45 ? 0 : t < 90 ? 1 : 2; })();
-    const mult = choice === 2 ? 9 : 2;
-    const auszahlung = choice === result ? mult * session.stake : 0;
-    const neu = balance - session.stake + auszahlung;
+    const auszahlung = choice === result ? (choice === 2 ? 9 : 2) * session.stake : 0;
+    let neu = balance - session.stake + auszahlung;
     ledZeige(3);
-    lcdSet("Buche Runde...", "");
-    cards[session.card].balance = neu; saveCards(); renderCards();
+    if (!session.unlimited) { lcdSet("Buche Runde...", ""); s.balance = neu; save(); renderCards(); await sleep(120); } else neu = balance;
     session.balance = neu;
-    await sleep(120);
     await zeigeAufloesung(choice, result, session.stake, auszahlung, neu);
-    busy = false;
-    resultUntil = performance.now() + 5000;
-    session.since = performance.now();
+    busy = false; resultUntil = performance.now() + 5000; session.since = performance.now();
   }
   async function zeigeAufloesung(choice, result, einsatzWert, auszahlung, balance) {
-    const win = choice === result, netto = win ? auszahlung - einsatzWert : einsatzWert;
-    const effect = !win ? "loss" : choice === 2 ? "jackpot" : "win";
+    const win = choice === result, netto = win ? auszahlung - einsatzWert : einsatzWert, effect = !win ? "loss" : choice === 2 ? "jackpot" : "win";
     log("SPIEL", `Wahl=${farbe(choice)} Ergebnis=${farbe(result)} Einsatz=${einsatzWert} Auszahlung=${auszahlung} Guthaben=${balance}`);
-    // led chase, starts anywhere, slows down, ends on the result
     const start = Math.floor(Math.random() * 3), count = 24 + (result + 4 - start) % 3;
     lcdSet("Lauflicht...", "Viel Glueck!");
-    for (let step = 0; step < count; step++) {
-      const index = (start + step) % 3;
-      ledZeige(index);
-      const zeit = 45 + Math.floor(455 * step * step / ((count - 1) * (count - 1)));
-      tone(1200 + index * 250, 18);
-      await sleep(zeit);
-    }
+    for (let step = 0; step < count; step++) { const index = (start + step) % 3; ledZeige(index); const zeit = 45 + Math.floor(455 * step * step / ((count - 1) * (count - 1))); tone(1200 + index * 250, 18); await sleep(zeit); }
     lcdSet(effect === "jackpot" ? "JACKPOT! GRUEN" : farbe(result), (win ? "Gewinn +" : "Verlust -") + netto);
     const notes = effect === "jackpot" ? JACKPOT_SOUND : effect === "win" ? WIN_SOUND : LOSS_SOUND;
     log("SOUND", effect === "jackpot" ? "JACKPOT: Fanfare + 8-Bit-Abschluss." : effect === "win" ? "WIN: Level-up." : "LOSS: Womp-womp.");
     for (const [hz, dur, gap] of notes) { await tonSpiele(hz, dur); await sleep(gap); }
-    lcdSet((win ? "Gewinn +" : "Verlust -") + netto, balance + "€");
+    lcdSet((win ? "Gewinn +" : "Verlust -") + netto, money(balance));
   }
-
-  // stake ramp, hold black
-  const einsatzGrenze = () => stakeLimit(session.active ? cards[session.card].balance : STAKE);
+  const einsatzGrenze = () => session.unlimited ? STAKE_MAX : stakeLimit(session.active ? slots[session.slot].balance : STAKE);
   const schrittweite = w => w < 100 ? 10 : w < 500 ? 50 : 100;
   function einsatzAnzeigen() { lcdSet("Einsatz " + einsatz.wahl + "€", einsatz.loop ? "Loslassen = stop" : "S-10  R+10  G ok"); }
-  function einsatzStarten() {
-    einsatz.wahl = Math.min(session.stake, einsatzGrenze()); einsatz.led = 0;
-    hold.mask = 0; hold.bar = 255;
-    log("EINSATZ", "Laeuft hoch, solange gehalten. Loslassen haelt an, dann S/R fein, G ok.");
-    einsatzWeiter(1, performance.now());
-  }
+  function einsatzStarten() { einsatz.wahl = Math.min(session.stake, einsatzGrenze()); einsatz.led = 0; hold.mask = 0; hold.bar = 255; log("EINSATZ", "Laeuft hoch, solange gehalten. Loslassen haelt an, dann S/R fein, G ok."); einsatzWeiter(1, performance.now()); }
   function einsatzWeiter(taste, now) { einsatz.loop = true; einsatz.fein = false; einsatz.taste = taste; einsatz.stepAt = now; einsatz.holdSince = 0; einsatzAnzeigen(); }
   function einsatzLoopSchritt(now) {
-    if (now - einsatz.stepAt < 320) return;
-    einsatz.stepAt = now;
+    if (now - einsatz.stepAt < 320) return; einsatz.stepAt = now;
     const grenze = einsatzGrenze(), schritt = schrittweite(einsatz.wahl);
     einsatz.wahl = einsatz.wahl + schritt > grenze ? STAKE_STEP : einsatz.wahl + schritt;
-    einsatz.led = (einsatz.led + 1) % 3; ledZeige(einsatz.led);
-    einsatzAnzeigen(); tone(1100 + einsatz.led * 220, 8);
+    einsatz.led = (einsatz.led + 1) % 3; ledZeige(einsatz.led); einsatzAnzeigen(); tone(1100 + einsatz.led * 220, 8);
   }
   function einsatzLoopStoppen(now) { einsatz.loop = false; einsatz.fein = true; einsatz.last = now; einsatz.holdSince = 0; ledZeige(3); einsatzAnzeigen(); }
   function einsatzFeinSchritt(hoch, now) {
     const grenze = einsatzGrenze();
-    if (hoch) einsatz.wahl = einsatz.wahl + STAKE_STEP > grenze ? grenze : einsatz.wahl + STAKE_STEP;
-    else einsatz.wahl = einsatz.wahl > STAKE_STEP * 2 - 1 ? einsatz.wahl - STAKE_STEP : STAKE_STEP;
+    if (hoch) einsatz.wahl = einsatz.wahl + STAKE_STEP > grenze ? grenze : einsatz.wahl + STAKE_STEP; else einsatz.wahl = einsatz.wahl > STAKE_STEP * 2 - 1 ? einsatz.wahl - STAKE_STEP : STAKE_STEP;
     einsatz.last = now; einsatzAnzeigen(); tone(hoch ? 1500 : 900, 10);
   }
   function einsatzUebernehmen() {
     einsatz.loop = false; einsatz.fein = false; ledZeige(3);
-    session.stake = einsatz.wahl; cards[session.card].stake = session.stake; saveCards();
-    log("EINSATZ", session.stake + " Punkte, beim Konto gespeichert.");
-    session.since = performance.now(); menuLcd(); status();
+    session.stake = einsatz.wahl; slots[session.slot].stakeUnits = session.stake / STAKE_STEP; save();
+    log("EINSATZ", session.stake + " Punkte, beim Konto gespeichert."); session.since = performance.now(); menuLcd(); status(); renderAdmin();
   }
-
   async function halteAktion(mask) {
     if (mask === 4) { await tonStufeWeiter(); return; }
     if (mask === 2) { if (!session.active) { lcdSet("Keine Sitzung", "Karte auflegen"); return; } await halteQuittung(700); beendeSitzung(true); return; }
@@ -586,196 +838,186 @@ Karte auflegen  </div>
   const halteTitel = mask => mask === 2 ? (session.active ? "Logout" : "Keine Sitzung") : mask === 4 ? stufenName((tonStufe + 1) % 3) : (session.active ? "Einsatz aendern" : "Keine Sitzung");
   function zeigeHaltefortschritt(mask, dauer, now) {
     if (dauer < 250) return;
-    let fuell = Math.floor((dauer - 250) * 16 / (1200 - 250)); if (fuell > 16) fuell = 16;
+    let fuell = Math.floor((dauer - 250) * 16 / 950); if (fuell > 16) fuell = 16;
     if (fuell !== hold.bar) { hold.bar = fuell; lcdSet(halteTitel(mask), "█".repeat(fuell)); }
     let periode = 260 - Math.floor(200 * dauer / 1200); if (periode < 60) periode = 60;
     if (now - hold.pulse < periode / 2) return;
-    hold.pulse = now; hold.bright = !hold.bright;
-    ledZeige(hold.bright ? (mask === 1 ? 0 : mask === 2 ? 1 : 2) : 3);
+    hold.pulse = now; hold.bright = !hold.bright; ledZeige(hold.bright ? (mask === 1 ? 0 : mask === 2 ? 1 : 2) : 3);
   }
-
-  // button press and release, this is tastenService() without the polling
   function pressButton(i) {
-    if (down[i]) return;
-    audio();
+    if (down[i]) return; audio();
     down[i] = true; plungers[i].userData.pressed = true;
     if (busy) return;
     const now = performance.now(), mask = 1 << i;
-    if (einsatz.loop || einsatz.fein) {
-      if (einsatz.loop) return;                        // second button while ramping: ignored
-      if (mask === 4) { einsatzUebernehmen(); return; }
-      einsatzFeinSchritt(mask === 2, now); einsatz.holdSince = now; return;
-    }
-    if (hold.mask) return;                             // one button at a time
+    if (einsatz.loop || einsatz.fein) { if (einsatz.loop) return; if (mask === 4) { einsatzUebernehmen(); return; } einsatzFeinSchritt(mask === 2, now); einsatz.holdSince = now; return; }
+    if (hold.mask) return;
     hold.mask = mask; hold.since = now; hold.done = false; hold.bar = 255; hold.pulse = now; hold.bright = false;
   }
   async function releaseButton(i) {
-    if (!down[i]) return;
-    down[i] = false; plungers[i].userData.pressed = false;
+    if (!down[i]) return; down[i] = false; plungers[i].userData.pressed = false;
     const mask = 1 << i, now = performance.now();
     if (einsatz.loop && mask === einsatz.taste) { einsatzLoopStoppen(now); return; }
     if (einsatz.fein) { einsatz.holdSince = 0; return; }
     if (hold.mask !== mask) return;
-    const erledigt = hold.done;
-    hold.mask = 0; hold.bar = 255;
+    const erledigt = hold.done; hold.mask = 0; hold.bar = 255;
     if (erledigt) { ledZeige(3); return; }
     if (busy) return;
     await spiele(i);
   }
-  function serviceFrame(now) {
-    // hold in progress
+  function serviceTick(now) {
     if (hold.mask && !busy) {
       const dauer = now - hold.since;
       if (dauer >= 1200 && !hold.done) { hold.done = true; busy = true; halteAktion(hold.mask).then(() => { busy = false; resultUntil = performance.now() + 5000; }); }
       else if (!hold.done) zeigeHaltefortschritt(hold.mask, dauer, now);
     }
     if (einsatz.loop && down[einsatz.taste === 1 ? 0 : einsatz.taste === 2 ? 1 : 2]) einsatzLoopSchritt(now);
-    if (einsatz.fein) {
-      const held = down[0] ? 1 : down[1] ? 2 : 0;
-      if (held && einsatz.holdSince && now - einsatz.holdSince >= 700) einsatzWeiter(held, now);
-      else if (!held && now - einsatz.last >= 6000) einsatzUebernehmen();
-    }
-    // session timeout
+    if (einsatz.fein) { const held = down[0] ? 1 : down[1] ? 2 : 0; if (held && einsatz.holdSince && now - einsatz.holdSince >= 700) einsatzWeiter(held, now); else if (!held && now - einsatz.last >= 6000) einsatzUebernehmen(); }
     if (session.active && !busy && now - session.since >= SESSION_MS) beendeSitzung(false);
-    // result text expires
     if (resultUntil && now >= resultUntil && !busy && !hold.mask && !einsatz.loop && !einsatz.fein) { resultUntil = 0; menuLcd(); }
-    // idle chase and session warning, like ledService()
     if (!hold.mask && !busy && !resultUntil && !einsatz.loop && !einsatz.fein) {
-      if (!session.active) {
-        if (now - idleAt >= 420) { idleAt = now; idleStep = (idleStep + 1) % 6; ledZeige(idleStep < 3 ? idleStep : 3); }
-      } else {
-        const rest = SESSION_MS - (now - session.since);
-        if (rest > 10000) ledZeige(3);
-        else { const periode = rest > 3000 ? 450 : 130; if (now - blinkAt >= periode) { blinkAt = now; blinkOn = !blinkOn; ledZeige(blinkOn ? 4 : 3); } }
-      }
+      if (!session.active) { if (now - idleAt >= 420) { idleAt = now; idleStep = (idleStep + 1) % 6; ledZeige(idleStep < 3 ? idleStep : 3); } }
+      else { const rest = SESSION_MS - (now - session.since); if (rest > 10000) ledZeige(3); else { const periode = rest > 3000 ? 450 : 130; if (now - blinkAt >= periode) { blinkAt = now; blinkOn = !blinkOn; ledZeige(blinkOn ? 4 : 3); } } }
     }
-    if (session.active && (now | 0) % 8 === 0) status();
+    if (session.active && Math.floor(now / 500) !== serviceTick.lastSec) { serviceTick.lastSec = Math.floor(now / 500); status(); }
   }
+  setInterval(() => serviceTick(performance.now()), 15);
 
-  // ------------------------------------------------------------ pointer input: orbit, hover, buttons, tap zone
-  const target = new THREE.Vector3(95, 28, -65);
-  let theta = 0.72, phi = 1.02, radius = 410, autospin = false, dragging = false, last = null;
-  const views = { iso: [0.72, 1.02, 410], player: [0.05, 0.95, 360], top: [0, 0.06, 430], left: [-Math.PI / 2, 1.15, 430], under: [0.6, 2.55, 430] };
-  function placeCamera() {
-    camera.position.set(target.x + radius * Math.sin(phi) * Math.sin(theta), target.y + radius * Math.cos(phi), target.z + radius * Math.sin(phi) * Math.cos(theta));
-    camera.lookAt(target);
+  // ------------------------------------------------------------ admin protocol, AdminSerial.h in javascript
+  const isHexUid = t => /^([0-9a-fA-F]{8}|[0-9a-fA-F]{14}|[0-9a-fA-F]{20})$/.test(t);
+  function adminBefehl(line) {
+    const parts = line.trim().split(/\s+/); if (!parts[0]) return;
+    const cmd = parts[0].toUpperCase(), a1 = parts[1], a2 = parts[2];
+    const err = t => reply("#ERR " + t);
+    const slotOk = i => Number.isInteger(i) && i >= 0 && i < CAPACITY && slots[i];
+    switch (cmd) {
+      case "PING": reply(`#OK PING v10 slots=${CAPACITY} used=${used()} sound=${tonStufe} session=${session.active ? session.slot : -1}`); return;
+      case "LIST": { let n = 0; slots.forEach((s, i) => { if (s) { reply(`#ROW ${i} ${s.uid} ${s.funded ? 1 : 0} ${s.balance} ${stakeOf(s)} ${s.flag}`); n++; } }); reply("#OK LIST " + n); return; }
+      case "SET": { if (!a1 || !a2) return err("SET <platz> <wert>"); const i = parseInt(a1), v = Math.max(0, parseInt(a2) || 0); if (!slotOk(i)) return err("Platz nicht belegt"); slots[i].funded = true; slots[i].balance = v; save(); if (session.active && session.slot === i) { session.balance = v; menuLcd(); } reply(`#OK SET ${i} ${v}`); break; }
+      case "STAKE": { if (!a1 || !a2) return err("STAKE <platz> <wert>"); const i = parseInt(a1), v = parseInt(a2) || 0; if (v < STAKE_STEP || v > STAKE_MAX || v % STAKE_STEP) return err("Vielfaches von 10, hoechstens 2550"); if (!slotOk(i) || !slots[i].funded) return err("Platz ohne Konto"); slots[i].stakeUnits = v / STAKE_STEP; save(); if (session.active && session.slot === i) { session.stake = v; menuLcd(); status(); } reply(`#OK STAKE ${i} ${v}`); break; }
+      case "FLAG": { if (!a1 || !a2) return err("FLAG <platz> <0|1|2>"); const i = parseInt(a1), art = parseInt(a2); if (!(art >= 0 && art <= 2)) return err("0 normal, 1 gesperrt, 2 unbegrenzt"); if (!slotOk(i)) return err("Platz nicht belegt"); slots[i].flag = art; save(); if (session.active && session.slot === i) { if (art === 1) beendeSitzung(true); else { session.unlimited = art === 2; menuLcd(); } } reply(`#OK FLAG ${i} ${art}`); break; }
+      case "ADD": { if (!a1 || !a2) return err("ADD <uidhex> <wert>"); if (!isHexUid(a1)) return err("UID braucht 8, 14 oder 20 Hexzeichen"); const uid = a1.toUpperCase(); if (find(uid) >= 0) return err("UID schon bekannt"); const i = reserve(uid); if (i < 0) return err("Liste voll"); slots[i].funded = true; slots[i].balance = Math.max(0, parseInt(a2) || 0); save(); reply(`#OK ADD ${i} ${slots[i].balance}`); break; }
+      case "FREE": { if (!a1) return err("FREE <platz>"); const i = parseInt(a1); if (session.active && session.slot === i) beendeSitzung(true); if (!slotOk(i)) return err("Platz nicht freigegeben"); slots[i] = null; save(); reply("#OK FREE " + i); break; }
+      case "SOUND": { if (!a1) return err("SOUND <0|1|2>"); const s = parseInt(a1); if (!(s >= 0 && s <= 2)) return err("0 laut, 1 leise, 2 aus"); tonStufe = s; save(); status(); reply("#OK SOUND " + s); return; }
+      case "CARD": { if (!a1 || !isHexUid(a1)) return err("CARD <uidhex>, 8/14/20 Hexzeichen"); const uid = a1.toUpperCase(); showTag(uid); legeKarteAuf(uid); reply("#OK CARD"); break; }
+      case "WIPE": { if (a1 !== "JA") return err("WIPE JA zum Bestaetigen"); if (session.active) beendeSitzung(true); slots = Array(CAPACITY).fill(null); tonStufe = 0; save(); status(); reply("#OK WIPE"); break; }
+      default: return err("Unbekannt: PING LIST SET STAKE FLAG ADD FREE CARD SOUND WIPE");
+    }
+    renderCards();
   }
+  function send(line) { if (!line.trim()) return; serial("> " + line.trim(), "cmd"); adminBefehl(line); }
+  function renderAdmin() {
+    $("ping").innerHTML = `<span class="pill">v10</span><span class="pill">${used()} of ${CAPACITY} slots</span><span class="pill">sound ${["laut", "leise", "aus"][tonStufe]}</span><span class="pill">session ${session.active ? "slot " + session.slot : "none"}</span>`;
+    const tb = $("acc").querySelector("tbody"); tb.innerHTML = "";
+    slots.forEach((s, i) => {
+      if (!s) return;
+      const tr = document.createElement("tr"); if (session.active && session.slot === i) tr.className = "live";
+      tr.innerHTML = `<td>${i}</td><td class="uid">${s.uid}<br><span style="color:var(--muted)">${nameOf(s.uid) === s.uid ? "by hand" : nameOf(s.uid)}</span></td>
+        <td><select aria-label="status" data-i="${i}" class="flag"><option value="0"${s.flag === 0 ? " selected" : ""}>normal</option><option value="1"${s.flag === 1 ? " selected" : ""}>gesperrt</option><option value="2"${s.flag === 2 ? " selected" : ""}>Admin ∞</option></select></td>
+        <td><input type="number" min="0" aria-label="balance" data-i="${i}" class="bal" value="${s.balance}"></td>
+        <td><input type="number" min="10" max="2550" step="10" aria-label="stake" data-i="${i}" class="stk" value="${stakeOf(s)}"></td>
+        <td><button type="button" data-i="${i}" class="free">free</button></td>`;
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll(".flag").forEach(el => el.addEventListener("change", () => send(`FLAG ${el.dataset.i} ${el.value}`)));
+    tb.querySelectorAll(".bal").forEach(el => el.addEventListener("change", () => send(`SET ${el.dataset.i} ${el.value}`)));
+    tb.querySelectorAll(".stk").forEach(el => el.addEventListener("change", () => send(`STAKE ${el.dataset.i} ${el.value}`)));
+    tb.querySelectorAll(".free").forEach(el => el.addEventListener("click", () => send("FREE " + el.dataset.i)));
+  }
+  $("sound").addEventListener("change", () => send("SOUND " + $("sound").value));
+  $("wipe").addEventListener("click", () => { if (confirm("really wipe every uid and balance? this is WIPE JA on the real uno.")) send("WIPE JA"); });
+  $("add").addEventListener("click", () => send(`ADD ${$("add-uid").value.trim()} ${$("add-val").value}`));
+  $("card-cmd").addEventListener("click", () => send("CARD " + $("add-uid").value.trim()));
+  $("send").addEventListener("click", () => { send($("cmd").value); $("cmd").value = ""; });
+  $("cmd").addEventListener("keydown", e => { if (e.key === "Enter") { send($("cmd").value); $("cmd").value = ""; } });
+
+  // ------------------------------------------------------------ tabs
+  document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("[data-tab]").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+    ["play", "admin", "view", "case"].forEach(t => { $("sec-" + t).hidden = t !== b.dataset.tab; });
+    try { localStorage.setItem("minicasino-tab", b.dataset.tab); } catch (e) {}
+  }));
+  try { const t = localStorage.getItem("minicasino-tab"); if (t && $("tab-" + t)) $("tab-" + t).click(); } catch (e) {}
+
+  // ------------------------------------------------------------ pointer input
+  const target = V3(95, 28, -65);
+  let theta = 0.72, phi = 1.02, radius = 410, autospin = false, dragging = false, last = null;
+  const views = { iso: [0.72, 1.02, 410], player: [0.05, 0.95, 360], top: [0, 0.06, 430], inside: [0.9, 0.9, 330], left: [-Math.PI / 2, 1.15, 430], under: [0.6, 2.55, 430] };
+  function placeCamera() { camera.position.set(target.x + radius * Math.sin(phi) * Math.sin(theta), target.y + radius * Math.cos(phi), target.z + radius * Math.sin(phi) * Math.cos(theta)); camera.lookAt(target); }
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   function pick(e) {
     const r = canvas.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    const hits = ray.intersectObjects([...plungers, tapZone.zone], true);
-    if (!hits.length) return null;
-    let o = hits[0].object;
-    while (o && o.userData.button === undefined && !o.userData.tap) o = o.parent;
+    const targets = [...plungers, tapZone.zone]; if (shownTag && shownTag.visible) targets.push(shownTag);
+    const hits = ray.intersectObjects(targets, true); if (!hits.length) return null;
+    let o = hits[0].object; while (o && o.userData.button === undefined && !o.userData.tap) o = o.parent;
     return o ? o.userData : null;
   }
   let pointerButton = -1;
   canvas.addEventListener("pointerdown", e => {
-    canvas.focus();
-    const hit = pick(e);
+    canvas.focus(); const hit = pick(e);
     if (hit && hit.button !== undefined) { pointerButton = hit.button; pressButton(hit.button); canvas.setPointerCapture(e.pointerId); return; }
     if (hit && hit.tap) { tapCard(); return; }
     dragging = true; autospin = false; $("spin").checked = false; last = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener("pointermove", e => {
-    if (dragging) {
-      theta -= (e.clientX - last[0]) * 0.006;
-      phi = Math.min(3.0, Math.max(0.05, phi - (e.clientY - last[1]) * 0.006));
-      last = [e.clientX, e.clientY]; return;
-    }
+    if (dragging) { theta -= (e.clientX - last[0]) * 0.006; phi = Math.min(3.0, Math.max(0.05, phi - (e.clientY - last[1]) * 0.006)); last = [e.clientX, e.clientY]; return; }
     if (pointerButton >= 0) return;
-    const hit = pick(e);
-    canvas.style.cursor = hit ? "pointer" : "grab";
-    tapZone.zone.material.opacity = hit && hit.tap ? 0.18 : 0;
+    const hit = pick(e); canvas.style.cursor = hit ? "pointer" : "grab"; tapZone.zone.material.opacity = hit && hit.tap ? 0.18 : 0;
   });
-  function pointerEnd() {
-    if (pointerButton >= 0) { releaseButton(pointerButton); pointerButton = -1; }
-    dragging = false;
-  }
-  canvas.addEventListener("pointerup", pointerEnd);
-  canvas.addEventListener("pointercancel", pointerEnd);
-  canvas.addEventListener("wheel", e => { e.preventDefault(); radius = Math.min(1300, Math.max(150, radius * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
+  function pointerEnd() { if (pointerButton >= 0) { releaseButton(pointerButton); pointerButton = -1; } dragging = false; }
+  canvas.addEventListener("pointerup", pointerEnd); canvas.addEventListener("pointercancel", pointerEnd);
+  canvas.addEventListener("wheel", e => { e.preventDefault(); radius = Math.min(1300, Math.max(120, radius * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
   let pinch = null;
-  canvas.addEventListener("touchmove", e => {
-    if (e.touches.length === 2) {
-      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      if (pinch) radius = Math.min(1300, Math.max(150, radius * pinch / d));
-      pinch = d;
-    }
-  }, { passive: true });
+  canvas.addEventListener("touchmove", e => { if (e.touches.length === 2) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); if (pinch) radius = Math.min(1300, Math.max(120, radius * pinch / d)); pinch = d; } }, { passive: true });
   canvas.addEventListener("touchend", () => { pinch = null; });
   const KEYS = { "1": 0, "2": 1, "3": 2, s: 0, r: 1, g: 2 };
-  window.addEventListener("keydown", e => {
-    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-    if (e.repeat) return;
-    const k = e.key.toLowerCase();
-    if (k in KEYS) { pressButton(KEYS[k]); e.preventDefault(); }
-    if (k === "c") { tapCard(); e.preventDefault(); }
-  });
-  window.addEventListener("keyup", e => { const k = e.key.toLowerCase(); if (k in KEYS) releaseButton(KEYS[k]); });
+  window.addEventListener("keydown", e => { if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; if (e.repeat) return; const k = e.key.toLowerCase(); if (k in KEYS) { pressButton(KEYS[k]); e.preventDefault(); } if (k === "c") { tapCard(); e.preventDefault(); } });
+  window.addEventListener("keyup", e => { if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; const k = e.key.toLowerCase(); if (k in KEYS) releaseButton(KEYS[k]); });
 
   // ------------------------------------------------------------ view controls
+  let wiresDirty = true;
   function applyView() {
-    const e = parseFloat($("explode").value);
-    explodeGroup.position.set(0, -SIN * 90 * e, COS * 90 * e);
-    const showParts = $("parts").checked;
-    for (const [name, f] of Object.entries(FILES)) if (f.part && meshes[name]) meshes[name].visible = showParts;
-    if (meshes.lid) {
-      const x = $("xray").checked;
-      Object.assign(meshes.lid.material, { transparent: x, opacity: x ? 0.32 : 1, depthWrite: !x });
-      meshes.lid.castShadow = !x;
-      edgeLines.lid.material.opacity = x ? 0.7 : 0.5;
-    }
-    autospin = $("spin").checked;
+    explodeValue = parseFloat($("explode").value);
+    explodeGroup.position.set(0, -SIN * 90 * explodeValue, COS * 90 * explodeValue);
+    electronics.visible = $("parts").checked; lidParts.visible = true;
+    lidParts.children.forEach(c => { c.visible = $("parts").checked || c === tapZone.group || c === hover || plungers.some(p => c === p.parent); });
+    wireGroup.visible = $("wires").checked && $("parts").checked;
+    if (meshes.lid) { const x = $("xray").checked; Object.assign(meshes.lid.material, { transparent: x, opacity: x ? 0.3 : 1, depthWrite: !x }); meshes.lid.castShadow = !x; edgeLines.lid.material.opacity = x ? 0.7 : 0.5; }
+    if (meshes.base) meshes.base.visible = !$("hidebase").checked;
+    autospin = $("spin").checked; wiresDirty = true;
   }
-  ["explode", "parts", "xray", "spin"].forEach(id => { $(id).addEventListener("input", applyView); $(id).addEventListener("change", applyView); });
-  document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => {
-    [theta, phi, radius] = views[b.dataset.view]; autospin = false; $("spin").checked = false;
-  }));
+  ["explode", "parts", "wires", "xray", "hidebase", "spin"].forEach(id => { $(id).addEventListener("input", applyView); $(id).addEventListener("change", applyView); });
+  document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => { [theta, phi, radius] = views[b.dataset.view]; autospin = false; $("spin").checked = false; }));
 
   // ------------------------------------------------------------ frame loop
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  function resize() {
-    const w = canvas.clientWidth, h = canvas.clientHeight, pr = renderer.getPixelRatio();
-    if (canvas.width !== Math.floor(w * pr) || canvas.height !== Math.floor(h * pr)) {
-      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-    }
-  }
-  // game logic ticks on a timer, so holds and ramps keep their timing even when rendering is slow
-  setInterval(() => serviceFrame(performance.now()), 15);
+  function resize() { const w = canvas.clientWidth, h = canvas.clientHeight, pr = renderer.getPixelRatio(); if (canvas.width !== Math.floor(w * pr) || canvas.height !== Math.floor(h * pr)) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); } }
   const clock = new THREE.Clock();
   function frame() {
     const dt = Math.min(clock.getDelta(), 0.05), now = performance.now();
     resize();
-    // leds fade quickly toward their target, glow sprites follow
-    ledMeshes.forEach((m, i) => {
-      const t = leds[i] ? 1.6 : 0.08, k = 1 - Math.exp(-dt * 30);
-      m.emissiveIntensity += (t - m.emissiveIntensity) * k;
-      glows[i].material.opacity += ((leds[i] ? 0.85 : 0) - glows[i].material.opacity) * k;
-    });
+    if (wiresDirty) { wiresDirty = false; root.updateMatrixWorld(true); buildWires(); }
+    ledMats.forEach((m, i) => { const t = leds[i] ? 1.6 : 0.08, k = 1 - Math.exp(-dt * 30); m.emissiveIntensity += (t - m.emissiveIntensity) * k; glows[i].material.opacity += ((leds[i] ? 0.85 : 0) - glows[i].material.opacity) * k; });
     plungers.forEach(p => { const goal = p.userData.pressed ? p.userData.home - 3 : p.userData.home; p.position.z += (goal - p.position.z) * (1 - Math.exp(-dt * 40)); });
-    const card = tapZone.card, b = card.userData.bounce;
-    let z = card.userData.home + Math.sin(now / 900) * 3;
-    if (b && now - b < 700) { const p = (now - b) / 700; z = card.userData.home * (p < 0.4 ? 1 - p / 0.4 : (p - 0.4) / 0.6) + 1.5; }
-    card.position.z = z; card.visible = $("parts").checked;
+    const b = hover.userData.bounce; let z = 26 + Math.sin(now / 900) * 3, tilt = Math.sin(now / 1500) * 0.08;
+    if (b && now - b < 700) { const p = (now - b) / 700; z = 26 * (p < 0.4 ? 1 - p / 0.4 : (p - 0.4) / 0.6) + 2; tilt *= 0.2; }
+    hover.children.forEach(c => { c.position.z = z; c.rotation.x = tilt; c.rotation.z = -0.15; });
     if (autospin && !dragging && !reduce) theta += 0.0025;
-    placeCamera();
-    renderer.render(scene, camera);
-    requestAnimationFrame(frame);
+    placeCamera(); renderer.render(scene, camera); requestAnimationFrame(frame);
   }
-  loadModels();
-  applyView();
-  status();
-  frame();
-  // small console api, handy for poking at the simulation: miniCasino.press(1); miniCasino.release(1)
+  $("loading").hidden = true;
+  renderCards(); status(); applyView(); frame();
+  log("BOOT", "Mini Casino v10 | 115200 Baud | LCD 8,7,6,5,4,3");
+  log("MODUS", "Konten im EEPROM. Karte nur als Ausweis, Spiel ueber Tasten.");
+  log("UID-LISTE", `Bereit: Uno fuehrt bis zu ${CAPACITY} Konten dauerhaft.`);
+  log("SIM", "Ohne RC522. Vier Transponder stehen rechts, Tap Zone auf dem Modell.");
   window.miniCasino = {
-    press: pressButton, release: releaseButton, tap: tapCard,
-    select: i => { selected = i; renderCards(); },
-    state: () => ({ session: Object.assign({}, session), stufe: tonStufe, busy, lcd: lcdLines.slice(), cards: cards.map(c => Object.assign({}, c)) }),
+    press: pressButton, release: releaseButton, tap: tapCard, send, select: i => { selected = i; renderCards(); },
+    state: () => ({ session: Object.assign({}, session), stufe: tonStufe, busy, lcd: lcdLines.slice(), slots: slots.map(s => s && Object.assign({}, s)) }),
     screen: i => { const v = new THREE.Vector3(); plungers[i].getWorldPosition(v); v.project(camera); const r = canvas.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; },
     screenTap: () => { const v = new THREE.Vector3(); tapZone.zone.getWorldPosition(v); v.project(camera); const r = canvas.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; },
+    debug: { scene, renderer, camera, wireGroup, electronics, lidParts, hover, meshes },
   };
 })();
 </script>
