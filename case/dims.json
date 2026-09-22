@@ -1,0 +1,66 @@
+{
+  "outer_mm": [
+    190.0,
+    130.0,
+    40.0,
+    62.9
+  ],
+  "slope_deg": 10.0,
+  "wall_mm": 3.2,
+  "floor_mm": 4.0,
+  "lid_mm": 4.0,
+  "screws": {
+    "count": 6,
+    "type": "m3 x 12 countersunk",
+    "boss_hole_mm": 2.7
+  },
+  "button_hole_mm": 24.5,
+  "led_hole_mm": 5.1,
+  "lcd_window_mm": [
+    72.5,
+    25.5
+  ],
+  "lid_print_shift": [
+    0.0,
+    -138.951,
+    -39.392
+  ],
+  "stats": {
+    "base": {
+      "triangles": 11982,
+      "bounds_mm": [
+        0.0,
+        0.0,
+        0.0,
+        190.0,
+        130.0,
+        58.86
+      ],
+      "volume_cm3": 192.9
+    },
+    "lid": {
+      "triangles": 18244,
+      "bounds_mm": [
+        0.0,
+        0.0,
+        0.0,
+        190.0,
+        132.71,
+        11.0
+      ],
+      "volume_cm3": 92.9
+    },
+    "assembly": {
+      "triangles": 30226,
+      "bounds_mm": [
+        0.0,
+        0.0,
+        0.0,
+        190.0,
+        130.0,
+        62.92
+      ],
+      "volume_cm3": 285.8
+    }
+  }
+}

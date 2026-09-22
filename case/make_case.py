@@ -1,0 +1,393 @@
+"""Parametric 3d printable case for the mini casino.
+
+    pip install manifold3d numpy
+    python case/make_case.py
+
+Writes to case/stl/:
+    base.stl        the body, print as is
+    lid.stl         the top plate, already flipped for printing (face down)
+    assembly.stl    both parts in place, for looking at
+    fitcheck/*.stl  dummy parts (uno, breadboard, lcd, ...) to check the fit
+
+Every number lives in the parameter block below. Change it, run again.
+Coordinates: x runs left to right, y front to back, z up. The top plate is
+tilted by SLOPE degrees and rises toward the back. Lid features are given in
+lid coordinates (u across, v up the slope from the front edge).
+"""
+from pathlib import Path
+import json
+import math
+import struct
+
+import numpy as np
+import manifold3d as mf
+from manifold3d import CrossSection, Manifold
+
+OUT = Path(__file__).resolve().parent / "stl"
+
+# ------------------------------------------------------------ parameters, mm
+W, D = 190.0, 130.0        # footprint
+H_FRONT = 40.0             # total height at the front edge, lid included
+SLOPE = 10.0               # degrees, the top rises toward the back
+R = 8.0                    # outer corner radius
+WALL = 3.2
+FLOOR = 4.0
+LID = 4.0
+CLEAR = 0.3                # clearance between lid skirt and wall
+SEG = 96                   # segments for round things
+
+# lid screws: m3 countersunk from the top into bosses on the base
+BOSS_D = 8.0
+BOSS_HOLE = 2.7            # m3 self tapping in pla or petg. use 4.0 for heat set inserts
+SCREW_D = 3.4
+CSK_D = 6.6
+SKIRT_H, SKIRT_T = 3.0, 2.0
+
+# lid features, lid coordinates (u, v)
+BUTTONS = [(42.0, 34.0), (78.0, 34.0), (114.0, 34.0)]
+BUTTON_HOLE = 24.5         # 24 mm arcade buttons. 16.2 for 16 mm, 12.2 for 12 mm panel buttons
+LEDS = [(42.0, 62.0), (78.0, 62.0), (114.0, 62.0)]
+LED_HOLE = 5.1             # 5 mm led, press fit
+LCD_AT = (78.0, 100.0)
+LCD_WINDOW = (72.5, 25.5)  # bezel cutout of a 1602
+LCD_HOLES = (75.0, 31.0)   # hole spacing of a 1602
+LCD_STANDOFF = 3.0         # bezel height 7 minus lid 4: bezel ends up flush with the top
+RC522_AT = (158.0, 60.0)
+RC522 = (40.0, 60.0)       # module footprint (u, v), long side up the slope
+RC522_DEPTH = 6.0          # frame height under the lid
+BUZZER_AT = (158.0, 112.0)
+BUZZER_D = 12.4            # passive buzzer cylinder
+
+# base features, world coordinates
+UNO_AT = (6.7, 64.0)       # bottom left corner of the board, usb side to the left wall
+UNO = (68.6, 53.3)
+UNO_HOLES = [(14.0, 2.5), (15.3, 50.7), (66.1, 7.6), (66.1, 35.5)]
+UNO_STANDOFF = 5.0
+USB_Y, USB_W = 37.75, 14.0     # usb b jack, relative to the board
+JACK_Y, JACK_W = 7.5, 11.0     # dc jack
+PORT_H = 13.0
+BREADBOARD_AT = (100.0, 52.0)
+BREADBOARD = (83.0, 55.0)      # half size breadboard, self adhesive
+FEET_D, FEET_INSET = 10.5, 14.0
+
+TAN = math.tan(math.radians(SLOPE))
+SIN = math.sin(math.radians(SLOPE))
+COS = math.cos(math.radians(SLOPE))
+Z_LID = H_FRONT - LID / COS    # front height of the lid underside plane
+BOSSES = [(8.0, 8.0), (W - 8, 8.0), (8.0, D - 8), (W - 8, D - 8), (W / 2, 8.0), (W / 2, D - 8)]
+
+
+# ------------------------------------------------------------ helpers
+def rrect(w, d, r):
+    """rounded rectangle, corner at the origin."""
+    r = max(r, 0.01)
+    return CrossSection.square((w - 2 * r, d - 2 * r)).translate((r, r)).offset(r, mf.JoinType.Round, 2.0, SEG)
+
+
+def rbox(w, d, h, r, at=(0.0, 0.0, 0.0)):
+    return rrect(w, d, r).extrude(h).translate(at)
+
+
+def cyl(d, h, at=(0.0, 0.0, 0.0)):
+    return Manifold.cylinder(h, d / 2, d / 2, SEG).translate(at)
+
+
+def below(part, z_front):
+    """keep everything under the plane z = z_front + y * tan(slope)."""
+    return part.trim_by_plane((0.0, SIN, -COS), -COS * z_front)
+
+
+def above(part, z_front):
+    return part.trim_by_plane((0.0, -SIN, COS), COS * z_front)
+
+
+def on_lid(part, u, v, top=True):
+    """place a part built in lid coordinates. local z=0 is the lid surface (top or
+    underside), local +z points out of the case, so features grow into the case
+    along -z. local x is u, local y is v (up the slope)."""
+    y = v * COS
+    z = (H_FRONT if top else Z_LID) + y * TAN
+    return part.rotate((SLOPE, 0.0, 0.0)).translate((u, y, z))
+
+
+def at_world_on_lid(part, x, y, top=True):
+    """same, for a world xy position (used for the screw bosses)."""
+    z = (H_FRONT if top else Z_LID) + y * TAN
+    return part.rotate((SLOPE, 0.0, 0.0)).translate((x, y, z))
+
+
+def write_stl(part, path):
+    mesh = part.to_mesh()
+    verts = np.asarray(mesh.vert_properties, dtype=np.float64)[:, :3]
+    tris = np.asarray(mesh.tri_verts, dtype=np.int64)
+    a, b, c = verts[tris[:, 0]], verts[tris[:, 1]], verts[tris[:, 2]]
+    n = np.cross(b - a, c - a)
+    length = np.linalg.norm(n, axis=1)
+    length[length == 0] = 1
+    n = n / length[:, None]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(b"mini casino case, generated by case/make_case.py".ljust(80, b"\0"))
+        f.write(struct.pack("<I", len(tris)))
+        data = np.zeros(len(tris), dtype=[("n", "<f4", 3), ("v", "<f4", (3, 3)), ("attr", "<u2")])
+        data["n"] = n
+        data["v"][:, 0], data["v"][:, 1], data["v"][:, 2] = a, b, c
+        f.write(data.tobytes())
+    return len(tris)
+
+
+def bounds(part):
+    bb = part.bounding_box()
+    return [round(float(x), 2) for x in bb]
+
+
+# ------------------------------------------------------------ base
+def build_base():
+    outer = rbox(W, D, H_FRONT + D * TAN + 10, R)
+    body = below(outer, Z_LID)
+    cavity = rbox(W - 2 * WALL, D - 2 * WALL, 300, R - WALL, (WALL, WALL, FLOOR))
+    body = body - cavity
+
+    # screw bosses, cut flush with the lid underside, pilot hole along the lid normal
+    for x, y in BOSSES:
+        body = body + below(cyl(BOSS_D, 300, (x, y, 0)), Z_LID)
+        body = body - at_world_on_lid(cyl(BOSS_HOLE, 16, (0, 0, -16)), x, y, top=False)
+
+    # arduino standoffs
+    for hx, hy in UNO_HOLES:
+        x, y = UNO_AT[0] + hx, UNO_AT[1] + hy
+        body = body + cyl(6.0, UNO_STANDOFF, (x, y, FLOOR))
+        body = body - cyl(2.6, UNO_STANDOFF + 2, (x, y, FLOOR - 0.5))
+
+    # usb and dc jack openings in the left wall
+    z0 = FLOOR + UNO_STANDOFF + 1.6 - 1.0
+    for cy, w in ((USB_Y, USB_W), (JACK_Y, JACK_W)):
+        y = UNO_AT[1] + cy
+        port = rrect(w, PORT_H, 1.5).extrude(WALL + 4).rotate((90, 0, 90)).translate((-2, y + w / 2, z0))
+        body = body - port
+
+    # breadboard pocket, 0.6 deep so it cannot slide
+    body = body - rbox(BREADBOARD[0] + 1, BREADBOARD[1] + 1, 2, 2, (BREADBOARD_AT[0] - 0.5, BREADBOARD_AT[1] - 0.5, FLOOR - 0.6))
+
+    # rubber feet
+    for x, y in ((FEET_INSET, FEET_INSET), (W - FEET_INSET, FEET_INSET), (FEET_INSET, D - FEET_INSET), (W - FEET_INSET, D - FEET_INSET)):
+        body = body - cyl(FEET_D, 2, (x, y, -1))
+    return body
+
+
+# ------------------------------------------------------------ lid
+def build_lid():
+    outer = rbox(W, D, H_FRONT + D * TAN + 10, R)
+    plate = below(above(outer, Z_LID), H_FRONT)
+
+    # skirt: keeps the lid from shifting, interrupted around the bosses
+    inset = WALL + CLEAR
+    ring = rrect(W - 2 * inset, D - 2 * inset, R - inset).translate((inset, inset))
+    ring = ring - ring.offset(-SKIRT_T, mf.JoinType.Round, 2.0, SEG)
+    skirt = below(above(ring.extrude(300), Z_LID - SKIRT_H / COS), Z_LID + 0.01)
+    for x, y in BOSSES:
+        skirt = skirt - cyl(BOSS_D + 3, 300, (x, y, -1))
+    lid = plate + skirt
+
+    # countersunk screw holes
+    csk_h = (CSK_D - SCREW_D) / 2
+    csk = Manifold.cylinder(csk_h, SCREW_D / 2, CSK_D / 2, SEG).translate((0, 0, -csk_h))
+    cutter = cyl(SCREW_D, 30, (0, 0, -25)) + csk + cyl(CSK_D, 5, (0, 0, -0.01))
+    for x, y in BOSSES:
+        lid = lid - at_world_on_lid(cutter, x, y, top=True)
+
+    # buttons and leds
+    for u, v in BUTTONS:
+        lid = lid - on_lid(cyl(BUTTON_HOLE, 30, (0, 0, -20)), u, v)
+    for u, v in LEDS:
+        lid = lid - on_lid(cyl(LED_HOLE, 30, (0, 0, -20)), u, v)
+
+    # lcd window and standoffs
+    u, v = LCD_AT
+    win = rrect(*LCD_WINDOW, 1.5).extrude(30).translate((-LCD_WINDOW[0] / 2, -LCD_WINDOW[1] / 2, -20))
+    lid = lid - on_lid(win, u, v)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            hx, hy = su * LCD_HOLES[0] / 2, sv * LCD_HOLES[1] / 2
+            lid = lid + on_lid(cyl(6.0, LCD_STANDOFF, (hx, hy, -LCD_STANDOFF)), u, v, top=False)
+            lid = lid - on_lid(cyl(2.2, LCD_STANDOFF + 3, (hx, hy, -LCD_STANDOFF - 2)), u, v, top=False)
+
+    # rc522 pocket under the lid: frame, header slot, two snap nubs, engraved marking on top
+    u, v = RC522_AT
+    fw, fd = RC522[0] + 2, RC522[1] + 2                      # 1 mm clearance
+    frame2d = rrect(fw + 4, fd + 4, 3).translate((-(fw + 4) / 2, -(fd + 4) / 2)) - rrect(fw, fd, 1).translate((-fw / 2, -fd / 2))
+    frame = frame2d.extrude(RC522_DEPTH).translate((0, 0, -RC522_DEPTH))
+    frame = frame - Manifold.cube((16, 10, RC522_DEPTH + 2)).translate((-8, -fd / 2 - 5, -RC522_DEPTH - 1))   # slot for the pin header
+    for side in (-1, 1):
+        frame = frame + Manifold.cube((8, 0.8, 1.0)).translate((-4, side * fw / 2 - (0.8 if side > 0 else 0), -3.0))
+    lid = lid + on_lid(frame, u, v, top=False)
+    groove = rrect(52, 34, 6).translate((-26, -17)) - rrect(50, 32, 5).translate((-25, -16))
+    lid = lid - on_lid(groove.extrude(2).translate((0, 0, -0.6)), u, v)
+    for rr in (5.0, 9.0, 13.0):     # contactless symbol, three arcs
+        arc = (CrossSection.circle(rr + 0.8, SEG) - CrossSection.circle(rr - 0.8, SEG))
+        wedge = CrossSection.square((40, 40)).rotate(-45).translate((0, 0))          # keeps the right hand quarter
+        arc = arc ^ CrossSection.square((40, 40)).translate((0, -20)) ^ wedge
+        lid = lid - on_lid(arc.extrude(2).translate((-4, 0, -0.6)), u, v)
+
+    # buzzer: ring pocket under the lid and a grille of seven holes
+    u, v = BUZZER_AT
+    ring = (CrossSection.circle(BUZZER_D / 2 + 2.5, SEG) - CrossSection.circle(BUZZER_D / 2, SEG)).extrude(7).translate((0, 0, -7))
+    lid = lid + on_lid(ring, u, v, top=False)
+    holes = [(0.0, 0.0)] + [(4.2 * math.cos(math.radians(k * 60)), 4.2 * math.sin(math.radians(k * 60))) for k in range(6)]
+    for hx, hy in holes:
+        lid = lid - on_lid(cyl(2.2, 30, (hx, hy, -20)), u, v)
+    return lid
+
+
+# ------------------------------------------------------------ dummy parts for the fit check
+def fit_parts():
+    parts = {}
+    x0, y0 = UNO_AT
+    z0 = FLOOR + UNO_STANDOFF
+    uno = Manifold.cube((UNO[0], UNO[1], 1.6)).translate((x0, y0, z0))
+    uno = uno + Manifold.cube((16, 12, 11)).translate((x0 - 6.5, y0 + USB_Y - 6, z0 + 1.6))
+    uno = uno + Manifold.cube((14, 9, 11)).translate((x0 - 2, y0 + JACK_Y - 4.5, z0 + 1.6))
+    uno = uno + Manifold.cube((45, 2.5, 8.5)).translate((x0 + 17, y0 + 49.5, z0 + 1.6))
+    uno = uno + Manifold.cube((33, 2.5, 8.5)).translate((x0 + 30, y0 + 1.5, z0 + 1.6))
+    parts["uno"] = uno
+    parts["breadboard"] = Manifold.cube((BREADBOARD[0], BREADBOARD[1], 9)).translate((BREADBOARD_AT[0], BREADBOARD_AT[1], FLOOR))
+
+    u, v = LCD_AT
+    lcd = Manifold.cube((80, 36, 1.6)).translate((-40, -18, -LCD_STANDOFF - 1.6))
+    lcd = lcd + Manifold.cube((71.5, 24.5, 7)).translate((-35.75, -12.25, -LCD_STANDOFF))
+    lcd = lcd + Manifold.cube((40, 2.5, 9)).translate((-38, 14, -LCD_STANDOFF - 1.6 - 9))
+    parts["lcd"] = on_lid(lcd, u, v, top=False)
+
+    u, v = RC522_AT
+    rc = Manifold.cube((RC522[0], RC522[1], 1.6)).translate((-RC522[0] / 2, -RC522[1] / 2, -1.8))
+    rc = rc + Manifold.cube((12, 12, 1.5)).translate((-6, -6, -3.3))
+    rc = rc + Manifold.cube((20, 2.5, 8)).translate((-10, -RC522[1] / 2 - 2.5, -9.8))
+    parts["rc522"] = on_lid(rc, u, v, top=False)
+
+    btn = Manifold()
+    for u, v in BUTTONS:
+        b = cyl(33, 2.5, (0, 0, 0)) + cyl(BUTTON_HOLE - 2, 8, (0, 0, 2.5)) + cyl(BUTTON_HOLE - 0.5, 30, (0, 0, -30))
+        btn = btn + on_lid(b, u, v)
+    parts["buttons"] = btn
+    leds = Manifold()
+    for u, v in LEDS:
+        leds = leds + on_lid(cyl(5, 8.5, (0, 0, -5)) + Manifold.sphere(2.5, 48).translate((0, 0, 3.5)), u, v)
+    parts["leds"] = leds
+    u, v = BUZZER_AT
+    parts["buzzer"] = on_lid(cyl(BUZZER_D - 0.4, 9.5, (0, 0, -9.7)) + Manifold.cube((22, 12, 1.6)).translate((-11, -6, -11.3)), u, v, top=False)
+    return parts
+
+
+def print_orientation(lid):
+    """lid flipped face down for printing. also returns the shift that was applied,
+    so a viewer can put lid.stl back in place: undo the shift, rotate 180 then SLOPE about x."""
+    flat = lid.rotate((-SLOPE, 0, 0)).rotate((180, 0, 0))
+    bb = flat.bounding_box()
+    return flat.translate((-bb[0], -bb[1], -bb[2])), [round(float(v), 3) for v in bb[:3]]
+
+
+def write_layout_svg(path):
+    """dimensioned top view of the lid and a side profile, pastel like the readme graphics."""
+    INK, MUTED, FONT = "#3E3A4F", "#8B87A3", "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    L = D / COS
+    s = 3.2                              # px per mm
+    ox, oy = 70, 90                      # top view origin (front left corner of the lid, v grows upward on paper)
+    def X(u): return ox + u * s
+    def Y(v): return oy + (L - v) * s
+    def dim_h(u1, u2, v, text, above=True):
+        y = Y(v)
+        return (f'<line x1="{X(u1)}" y1="{y}" x2="{X(u2)}" y2="{y}" stroke="{MUTED}" stroke-width="1.2"/>'
+                f'<line x1="{X(u1)}" y1="{y - 5}" x2="{X(u1)}" y2="{y + 5}" stroke="{MUTED}" stroke-width="1.2"/>'
+                f'<line x1="{X(u2)}" y1="{y - 5}" x2="{X(u2)}" y2="{y + 5}" stroke="{MUTED}" stroke-width="1.2"/>'
+                f'<text x="{(X(u1) + X(u2)) / 2}" y="{y - 7 if above else y + 16}" font-size="12" fill="{INK}" text-anchor="middle" font-family="{FONT}">{text}</text>')
+    def dim_v(u, v1, v2, text):
+        x = X(u)
+        return (f'<line x1="{x}" y1="{Y(v1)}" x2="{x}" y2="{Y(v2)}" stroke="{MUTED}" stroke-width="1.2"/>'
+                f'<line x1="{x - 5}" y1="{Y(v1)}" x2="{x + 5}" y2="{Y(v1)}" stroke="{MUTED}" stroke-width="1.2"/>'
+                f'<line x1="{x - 5}" y1="{Y(v2)}" x2="{x + 5}" y2="{Y(v2)}" stroke="{MUTED}" stroke-width="1.2"/>'
+                f'<text x="{x + 8}" y="{(Y(v1) + Y(v2)) / 2 + 4}" font-size="12" fill="{INK}" font-family="{FONT}">{text}</text>')
+    b = []
+    b.append(f'<rect x="{X(0)}" y="{Y(L)}" width="{W * s}" height="{L * s}" rx="{R * s}" fill="#DDD4F7" stroke="#AB9BE6" stroke-width="2"/>')
+    for x, y in BOSSES:
+        b.append(f'<circle cx="{X(x)}" cy="{Y(y / COS)}" r="{CSK_D / 2 * s}" fill="#F6F4FB" stroke="#AB9BE6" stroke-width="1.5"/>')
+    for (u, v), col, name in zip(BUTTONS, ("#8D9AB4", "#EA857E", "#93D391"), ("black", "red", "green")):
+        b.append(f'<circle cx="{X(u)}" cy="{Y(v)}" r="{BUTTON_HOLE / 2 * s}" fill="{col}" stroke="#fff" stroke-width="3"/>')
+        b.append(f'<text x="{X(u)}" y="{Y(v) + 4}" font-size="12" font-weight="600" fill="#fff" text-anchor="middle" font-family="{FONT}">{name}</text>')
+    for (u, v), col in zip(LEDS, ("#8D9AB4", "#EA857E", "#93D391")):
+        b.append(f'<circle cx="{X(u)}" cy="{Y(v)}" r="{LED_HOLE / 2 * s}" fill="{col}" stroke="#fff" stroke-width="2"/>')
+    u, v = LCD_AT
+    b.append(f'<rect x="{X(u - LCD_WINDOW[0] / 2)}" y="{Y(v + LCD_WINDOW[1] / 2)}" width="{LCD_WINDOW[0] * s}" height="{LCD_WINDOW[1] * s}" rx="4" fill="#3E3B54"/>')
+    b.append(f'<text x="{X(u)}" y="{Y(v) + 5}" font-size="14" fill="#C6EBC5" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700">10€: S/R/G</text>')
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            b.append(f'<circle cx="{X(u + su * LCD_HOLES[0] / 2)}" cy="{Y(v + sv * LCD_HOLES[1] / 2)}" r="{1.25 * s}" fill="none" stroke="#AB9BE6" stroke-width="1.5" stroke-dasharray="3 2"/>')
+    u, v = RC522_AT
+    b.append(f'<rect x="{X(u - RC522[0] / 2 - 1)}" y="{Y(v + RC522[1] / 2 + 1)}" width="{(RC522[0] + 2) * s}" height="{(RC522[1] + 2) * s}" rx="4" fill="none" stroke="#8DB9E9" stroke-width="1.5" stroke-dasharray="4 3"/>')
+    b.append(f'<rect x="{X(u - 25)}" y="{Y(v + 16)}" width="{50 * s}" height="{32 * s}" rx="{5 * s}" fill="none" stroke="#8DB9E9" stroke-width="2.5"/>')
+    for rr in (5.0, 9.0, 13.0):
+        b.append(f'<path d="M{X(u - 4) + rr * s * 0.7071:.1f},{Y(v) - rr * s * 0.7071:.1f} A{rr * s},{rr * s} 0 0 1 {X(u - 4) + rr * s * 0.7071:.1f},{Y(v) + rr * s * 0.7071:.1f}" fill="none" stroke="#8DB9E9" stroke-width="2.5" stroke-linecap="round"/>')
+    b.append(f'<text x="{X(u)}" y="{Y(v - 24)}" font-size="11" fill="{MUTED}" text-anchor="middle" font-family="{FONT}">rc522 under the lid</text>')
+    u, v = BUZZER_AT
+    b.append(f'<circle cx="{X(u)}" cy="{Y(v)}" r="{(BUZZER_D / 2 + 2.5) * s}" fill="none" stroke="#EE93A9" stroke-width="1.5" stroke-dasharray="4 3"/>')
+    for k in range(7):
+        hx, hy = (0, 0) if k == 6 else (4.2 * math.cos(math.radians(k * 60)), 4.2 * math.sin(math.radians(k * 60)))
+        b.append(f'<circle cx="{X(u + hx)}" cy="{Y(v + hy)}" r="{1.1 * s}" fill="#EE93A9"/>')
+    # dimensions
+    b.append(dim_h(0, W, -6, f"{W:g}", above=False))
+    b.append(dim_v(W + 6, 0, L, f"{L:.0f} on the slope"))
+    b.append(dim_h(BUTTONS[0][0], BUTTONS[1][0], 12, f"{BUTTONS[1][0] - BUTTONS[0][0]:g}", above=False))
+    b.append(dim_h(BUTTONS[1][0], BUTTONS[2][0], 12, f"{BUTTONS[1][0] - BUTTONS[0][0]:g}", above=False))
+    b.append(dim_v(-6, 0, BUTTONS[0][1], f"{BUTTONS[0][1]:g}"))
+    b.append(dim_v(-6, BUTTONS[0][1], LEDS[0][1], f"{LEDS[0][1] - BUTTONS[0][1]:g}"))
+    b.append(dim_v(-6, LEDS[0][1], LCD_AT[1], f"{LCD_AT[1] - LEDS[0][1]:g}"))
+    b.append(dim_h(LCD_AT[0] - LCD_WINDOW[0] / 2, LCD_AT[0] + LCD_WINDOW[0] / 2, LCD_AT[1] + LCD_WINDOW[1] / 2 + 3, f"{LCD_WINDOW[0]:g} × {LCD_WINDOW[1]:g}"))
+    b.append(f'<text x="{X(0)}" y="{Y(L) - 46}" font-size="22" font-weight="800" fill="{INK}" font-family="{FONT}" letter-spacing="-0.5">top plate, seen from above</text>')
+    b.append(f'<text x="{X(0)}" y="{Y(L) - 26}" font-size="12" fill="{MUTED}" font-family="{FONT}">all in mm, {D:g} deep when flat. dashed outlines sit under the lid, circles with a white ring are through holes.</text>')
+    # side profile, to the right
+    px, py = X(W) + 190, Y(0)
+    hb = H_FRONT + D * TAN
+    pts = f"{px},{py} {px + D * s},{py} {px + D * s},{py - hb * s} {px},{py - H_FRONT * s}"
+    b.append(f'<polygon points="{pts}" fill="#CDEFE0" stroke="#8FCFB3" stroke-width="2" stroke-linejoin="round"/>')
+    b.append(f'<line x1="{px}" y1="{py - (H_FRONT - LID) * s}" x2="{px + D * s}" y2="{py - (hb - LID) * s}" stroke="#AB9BE6" stroke-width="{LID * s}" opacity=".8"/>')
+    b.append(f'<rect x="{px + UNO_AT[1] * s}" y="{py - (FLOOR + UNO_STANDOFF + 1.6) * s}" width="{UNO[1] * s}" height="{1.6 * s}" fill="#6FBF9C"/>')
+    b.append(f'<rect x="{px + (UNO_AT[1] + 8) * s}" y="{py - (FLOOR + UNO_STANDOFF + 1.6 + 11) * s}" width="{38 * s}" height="{11 * s}" rx="3" fill="#6FBF9C" opacity=".55"/>')
+    b.append(f'<rect x="{px + BREADBOARD_AT[1] * s}" y="{py - (FLOOR + 9) * s}" width="{BREADBOARD[1] * s}" height="{9 * s}" fill="#F3E3BF"/>')
+    b.append(f'<text x="{px}" y="{py - hb * s - 46}" font-size="22" font-weight="800" fill="{INK}" font-family="{FONT}" letter-spacing="-0.5">side profile</text>')
+    b.append(f'<text x="{px}" y="{py - hb * s - 26}" font-size="12" fill="{MUTED}" font-family="{FONT}">front on the left. lid in lavender, uno and breadboard inside.</text>')
+    for xx, hh, lab in ((px - 8, H_FRONT, f"{H_FRONT:g}"), (px + D * s + 8, hb, f"{hb:.1f}")):
+        b.append(f'<line x1="{xx}" y1="{py}" x2="{xx}" y2="{py - hh * s}" stroke="{MUTED}" stroke-width="1.2"/>')
+        b.append(f'<text x="{xx + (-6 if xx < px else 6)}" y="{py - hh * s / 2 + 4}" font-size="12" fill="{INK}" text-anchor="{"end" if xx < px else "start"}" font-family="{FONT}">{lab}</text>')
+    b.append(f'<text x="{px + D * s / 2}" y="{py + 18}" font-size="12" fill="{INK}" text-anchor="middle" font-family="{FONT}">{D:g}, top tilted {SLOPE:g}°</text>')
+    width, height = int(px + D * s + 70), int(py + 40)
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">'
+           f'<rect width="{width}" height="{height}" rx="28" fill="#F8F6FC"/>' + "".join(b) + "</svg>\n")
+    path.write_text(svg, encoding="utf-8")
+
+
+def main():
+    base = build_base()
+    lid = build_lid()
+    write_layout_svg(OUT.parent / "layout.svg")
+    assembly = Manifold.compose([base, lid])
+    stats = {}
+    lid_print, lid_shift = print_orientation(lid)
+    for name, part in (("base", base), ("lid", lid_print), ("assembly", assembly)):
+        tris = write_stl(part, OUT / f"{name}.stl")
+        stats[name] = {"triangles": tris, "bounds_mm": bounds(part), "volume_cm3": round(part.volume() / 1000, 1)}
+        print(f"{name:9} {tris:7} tris  bounds {stats[name]['bounds_mm']}  volume {stats[name]['volume_cm3']} cm3")
+    for name, part in fit_parts().items():
+        write_stl(part, OUT / "fitcheck" / f"{name}.stl")
+    dims = {
+        "outer_mm": [W, D, H_FRONT, round(H_FRONT + D * TAN, 1)],
+        "slope_deg": SLOPE, "wall_mm": WALL, "floor_mm": FLOOR, "lid_mm": LID,
+        "screws": {"count": len(BOSSES), "type": "m3 x 12 countersunk", "boss_hole_mm": BOSS_HOLE},
+        "button_hole_mm": BUTTON_HOLE, "led_hole_mm": LED_HOLE, "lcd_window_mm": LCD_WINDOW,
+        "lid_print_shift": lid_shift,
+        "stats": stats,
+    }
+    (OUT.parent / "dims.json").write_text(json.dumps(dims, indent=2), encoding="utf-8")
+    print("wrote", OUT)
+
+
+if __name__ == "__main__":
+    main()

@@ -46,6 +46,14 @@ switches at the top of the sketch: `CASINO_SOUND_MODE` (0 off, 1 passive, 2 acti
 * **no hardware yet?** run `python simulation/build_sim.py` and paste the output into [wokwi](https://wokwi.com). four buttons stand in for the cards. details in [simulation/README.md](simulation/README.md).
 * **build check**: `python pruefen.py` compiles for the uno and runs the compile time tests, no upload needed.
 
+## case
+
+a 3d printable console for the whole build, two parts, no supports. stl files, the parametric model and the print notes live in [case/](case/README.md).
+
+<p align="center">
+  <img src="case/layout.svg" alt="case layout" width="100%">
+</p>
+
 ## more docs (german)
 
 [ANLEITUNG.md](ANLEITUNG.md) wiring in detail · [SPIELPLAN_V8.md](SPIELPLAN_V8.md) rules and pins · [SOUND_V9.md](SOUND_V9.md) buzzer · [LOG_ANLEITUNG.md](LOG_ANLEITUNG.md) serial log · [TESTPLAN.md](TESTPLAN.md) test plan
