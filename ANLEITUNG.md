@@ -178,7 +178,7 @@ V7 ergänzt das Farbspiel mit Einsatzabzug und Gewinnauszahlung; die Erstaufladu
 Die UID wird außerdem in der dauerhaften EEPROM-Merkliste registriert. Vor
 jeder Erstaufladung muss sie dort unbekannt und ein Platz verfügbar sein.
 Reservierung, Datenformat, Übernahme vorhandener Karten und Grenzen stehen in
-[BETRIEB_V6.md](BETRIEB_V6.md). Der Wert auf der Karte bleibt die Quelle des Guthabens.
+[UidRegistry.h](MiniCasino/UidRegistry.h). Der Wert auf der Karte bleibt die Quelle des Guthabens.
 
 ## Erstaufladung und vorhandene Funktionen
 

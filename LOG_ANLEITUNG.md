@@ -116,7 +116,7 @@ fest. Ein Anmeldefehler beweist auch keinen fehlenden Schlüssel.
 Einen einzelnen Tag ruhig dicht auflegen, Smartphone und andere Tags entfernen,
 kurze feste Leitungen und 3,3-V-Versorgung prüfen; vor Umstecken ausschalten.
 Siehe [MFRC522-Fehlersuche](https://github.com/miguelbalboa/rfid#troubleshooting).
-Alle Regeln und Grenzen der Liste: [BETRIEB_V6.md](BETRIEB_V6.md).
+Alle Regeln und Grenzen der Liste: [UidRegistry.h](MiniCasino/UidRegistry.h).
 
 ## Spiel-Logzeilen in V7
 

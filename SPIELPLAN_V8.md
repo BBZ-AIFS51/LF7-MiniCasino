@@ -139,7 +139,7 @@ BOOT muss **Mini Casino v8** zeigen. Die bestehenden Bibliotheken bleiben gleich
 Die Chancen und die Berechnung des Lauflichts stehen in `GameRules.h`, die
 LED-Pins und Ausgabe in `GameRuntime.h`. Die übrigen Dateien bleiben zuständig
 für RFID, Kartenformat, Tasten und UID-Merkliste. LCD-/RFID-Anschlüsse stehen in
-[ANLEITUNG.md](ANLEITUNG.md), die Merkliste in [BETRIEB_V6.md](BETRIEB_V6.md).
+[ANLEITUNG.md](ANLEITUNG.md), die Merkliste in [UidRegistry.h](MiniCasino/UidRegistry.h).
 
 Lokal geprüft: Uno kompiliert und gelinkt; alle bisherigen Logikprüfungen plus
 sämtliche 100 Lose und alle neun Kombinationen aus Start- und Zielfarbe des

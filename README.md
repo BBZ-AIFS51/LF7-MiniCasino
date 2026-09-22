@@ -304,7 +304,6 @@ Ist der Benutzer nicht in der Gruppe `dialout`, fehlt der Zugriff auf
 | SPIELPLAN_V8.md | Vollständiger Plan, Regeln, Anschlüsse, Speicherablauf, Grenzen |
 | SOUND_V9.md | Aktuelle Tonintegration; ersetzt die alte Einstellung „Ton aus“ |
 | ANLEITUNG.md | Bestätigte LCD-/RFID-Verdrahtung, Erstaufladung und Kartenformat |
-| BETRIEB_V6.md | Altes Kartenformat und Merkliste 06; von V10 abgelöst |
 | LOG_ANLEITUNG.md | RFID-Diagnose und neue Spiel-Logzeilen |
 | TESTPLAN.md | Prüfstand und Tests am Aufbau |
 | MiniCasino/ | Hauptsketch, Projekt-Header und die mitgelieferte MFRC522 1.4.12 |
