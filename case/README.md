@@ -2,7 +2,13 @@
 
 a 3d printable console for the whole build. two parts, a body and a top plate, everything else screws or clips onto them. the top plate is tilted by 10° so the lcd faces you and the tap zone sits under your hand.
 
-**open [viewer/index.html](viewer/index.html) in a browser** for the interactive model. it works straight from the folder, no server needed. the model plays: click the tap zone or one of the four cards, press the buttons on the model, hold black for the stake, red to log out, green for the volume. leds, lcd, buzzer sounds and the serial log behave like the firmware in `MiniCasino/GameRuntime.h`. the explode slider and the x ray toggle show how the electronics sit inside.
+**[open the interactive model](https://bbz-aifs51.github.io/LF7-MiniCasino/)** on github pages, or open [viewer/index.html](viewer/index.html) straight from the folder, no server needed. the model plays: tap with one of the four transponders, press the buttons on the model, hold black for the stake, red to log out, green for the volume. leds, lcd, buzzer sounds and the serial log behave like the firmware in `MiniCasino/GameRuntime.h`. the admin tab is the web panel and the serial console in one, it speaks the protocol from `MiniCasino/AdminSerial.h`. the view tab has the explode slider, x ray, every wire and the electronics inside.
+
+the page on github pages comes from the `gh-pages` branch. after changing the viewer, publish it again with
+
+```bash
+git subtree push --prefix case/viewer origin gh-pages
+```
 
 <p align="center">
   <img src="layout.svg" alt="case layout" width="100%">

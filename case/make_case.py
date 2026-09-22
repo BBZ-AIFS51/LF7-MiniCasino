@@ -217,7 +217,7 @@ def build_lid():
     fw, fd = RC522[0] + 2, RC522[1] + 2                      # 1 mm clearance
     frame2d = rrect(fw + 4, fd + 4, 3).translate((-(fw + 4) / 2, -(fd + 4) / 2)) - rrect(fw, fd, 1).translate((-fw / 2, -fd / 2))
     frame = frame2d.extrude(RC522_DEPTH).translate((0, 0, -RC522_DEPTH))
-    frame = frame - Manifold.cube((16, 10, RC522_DEPTH + 2)).translate((-8, -fd / 2 - 5, -RC522_DEPTH - 1))   # slot for the pin header
+    frame = frame - Manifold.cube((22, 10, RC522_DEPTH + 2)).translate((-11, -fd / 2 - 5, -RC522_DEPTH - 1))   # slot for the 8 pin header
     for side in (-1, 1):
         frame = frame + Manifold.cube((8, 0.8, 1.0)).translate((-4, side * fw / 2 - (0.8 if side > 0 else 0), -3.0))
     lid = lid + on_lid(frame, u, v, top=False)
@@ -395,14 +395,17 @@ def write_models_js(dims):
     fetch stl files, so they travel as base64 inside a script."""
     import base64
     names = {"base": OUT / "base.stl", "lid": OUT / "lid.stl"}
-    for n in ("uno", "breadboard", "lcd", "rc522", "buzzer"):
-        names[n] = OUT / "fitcheck" / f"{n}.stl"
     data = {k: base64.b64encode(p.read_bytes()).decode() for k, p in names.items()}
     layout = {
-        "slope": SLOPE, "h_front": H_FRONT, "lid": LID, "w": W, "d": D,
-        "buttons": BUTTONS, "button_hole": BUTTON_HOLE, "leds": LEDS,
-        "lcd_at": LCD_AT, "lcd_window": LCD_WINDOW, "rc522_at": RC522_AT, "rc522": RC522,
-        "buzzer_at": BUZZER_AT, "lid_print_shift": dims["lid_print_shift"],
+        "slope": SLOPE, "h_front": H_FRONT, "lid": LID, "w": W, "d": D, "r": R, "wall": WALL, "floor": FLOOR,
+        "buttons": BUTTONS, "button_hole": BUTTON_HOLE, "leds": LEDS, "led_hole": LED_HOLE,
+        "lcd_at": LCD_AT, "lcd_window": LCD_WINDOW, "lcd_holes": LCD_HOLES, "lcd_standoff": LCD_STANDOFF,
+        "rc522_at": RC522_AT, "rc522": RC522, "rc522_depth": RC522_DEPTH,
+        "buzzer_at": BUZZER_AT, "buzzer_d": BUZZER_D,
+        "uno_at": UNO_AT, "uno": UNO, "uno_holes": UNO_HOLES, "uno_standoff": UNO_STANDOFF,
+        "usb_y": USB_Y, "jack_y": JACK_Y,
+        "breadboard_at": BREADBOARD_AT, "breadboard": BREADBOARD, "bosses": BOSSES,
+        "lid_print_shift": dims["lid_print_shift"],
     }
     target = OUT.parent / "viewer" / "models.js"
     target.parent.mkdir(exist_ok=True)

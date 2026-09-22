@@ -48,7 +48,9 @@ switches at the top of the sketch: `CASINO_SOUND_MODE` (0 off, 1 passive, 2 acti
 
 ## case
 
-a 3d printable console for the whole build, two parts, no supports. stl files, the parametric model and the print notes live in [case/](case/README.md). open [case/viewer/index.html](case/viewer/index.html) locally for the interactive 3d model, it even plays the game.
+a 3d printable console for the whole build, two parts, no supports. stl files, the parametric model and the print notes live in [case/](case/README.md).
+
+**[▶ open the 3d model in your browser](https://bbz-aifs51.github.io/LF7-MiniCasino/)**. it plays the game with the real firmware logic, shows every wire and the electronics inside, and has the admin panel built in. the same page lives in the repo as [case/viewer/index.html](case/viewer/index.html) and works offline.
 
 <p align="center">
   <img src="case/layout.svg" alt="case layout" width="100%">
