@@ -2,6 +2,8 @@
 
 a 3d printable console for the whole build. two parts, a body and a top plate, everything else screws or clips onto them. the top plate is tilted by 10° so the lcd faces you and the tap zone sits under your hand.
 
+**open [viewer/index.html](viewer/index.html) in a browser** for the interactive model. it works straight from the folder, no server needed. the model plays: click the tap zone or one of the four cards, press the buttons on the model, hold black for the stake, red to log out, green for the volume. leds, lcd, buzzer sounds and the serial log behave like the firmware in `MiniCasino/GameRuntime.h`. the explode slider and the x ray toggle show how the electronics sit inside.
+
 <p align="center">
   <img src="layout.svg" alt="case layout" width="100%">
 </p>
@@ -16,6 +18,9 @@ a 3d printable console for the whole build. two parts, a body and a top plate, e
 | `stl/fitcheck/` | dummy uno, breadboard, lcd, rc522, buttons, leds and buzzer to check the fit in your slicer |
 | `make_case.py` | the model itself, every number is a parameter |
 | `dims.json` | the key numbers, written by the script |
+| `viewer/index.html` | interactive 3d model with the built in simulation, open it locally |
+| `viewer/models.js` | the meshes for the viewer, written by the script |
+| `viewer/three.min.js` | three.js r128, mit license, bundled so the viewer works offline |
 
 ## numbers
 
@@ -56,4 +61,4 @@ pip install manifold3d numpy
 python case/make_case.py
 ```
 
-all sizes and positions are in the parameter block at the top of `make_case.py`. lid features use lid coordinates, u across and v up the slope from the front edge. after a change look at `assembly.stl` together with the `fitcheck` parts before printing.
+all sizes and positions are in the parameter block at the top of `make_case.py`. lid features use lid coordinates, u across and v up the slope from the front edge. after a change the viewer shows the new model right away, and `assembly.stl` plus the `fitcheck` parts go into the slicer for a last look before printing.

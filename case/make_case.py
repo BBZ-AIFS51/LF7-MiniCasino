@@ -386,7 +386,28 @@ def main():
         "stats": stats,
     }
     (OUT.parent / "dims.json").write_text(json.dumps(dims, indent=2), encoding="utf-8")
+    write_models_js(dims)
     print("wrote", OUT)
+
+
+def write_models_js(dims):
+    """bundle the meshes for case/viewer/index.html. a plain file:// page cannot
+    fetch stl files, so they travel as base64 inside a script."""
+    import base64
+    names = {"base": OUT / "base.stl", "lid": OUT / "lid.stl"}
+    for n in ("uno", "breadboard", "lcd", "rc522", "buzzer"):
+        names[n] = OUT / "fitcheck" / f"{n}.stl"
+    data = {k: base64.b64encode(p.read_bytes()).decode() for k, p in names.items()}
+    layout = {
+        "slope": SLOPE, "h_front": H_FRONT, "lid": LID, "w": W, "d": D,
+        "buttons": BUTTONS, "button_hole": BUTTON_HOLE, "leds": LEDS,
+        "lcd_at": LCD_AT, "lcd_window": LCD_WINDOW, "rc522_at": RC522_AT, "rc522": RC522,
+        "buzzer_at": BUZZER_AT, "lid_print_shift": dims["lid_print_shift"],
+    }
+    target = OUT.parent / "viewer" / "models.js"
+    target.parent.mkdir(exist_ok=True)
+    target.write_text("window.CASE_LAYOUT=" + json.dumps(layout) + ";\nwindow.CASE_MODELS="
+                      + json.dumps(data) + ";\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
