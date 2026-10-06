@@ -20,8 +20,9 @@
 //
 // Achtung: Wer hier schreiben darf, kann Guthaben frei vergeben. Das Protokoll
 // hat bewusst keine Zugangskontrolle; wer am USB-Kabel haengt, ist Admin.
+// Auf kleinen Flash getrimmt: eigener Zahlenleser statt strtoul/atoi, ein
+// gemeinsamer Pfad fuer Antworten und kurze Fehlertexte.
 #include <string.h>
-#include <ctype.h>
 
 const byte ADMIN_MAX = 48;
 char adminZeile[ADMIN_MAX];
@@ -31,55 +32,37 @@ void adminFehler(const __FlashStringHelper *grund) {
   Serial.print(F("#ERR "));
   Serial.println(grund);
 }
-
-void adminUidAusgeben(const uint8_t *uid, uint8_t size) {
-  for (uint8_t i = 0; i < size; ++i) {
-    if (uid[i] < 0x10) Serial.print('0');
-    Serial.print(uid[i], HEX);
+// "#OK <befehl> <platz> <wert>"; wert < 0 laesst ihn weg.
+void adminOk(const char *cmd, long platz, long wert) {
+  Serial.print(F("#OK "));
+  Serial.print(cmd);
+  Serial.print(' ');
+  Serial.print(platz);
+  if (wert >= 0) { Serial.print(' '); Serial.print(wert); }
+  Serial.println();
+}
+// Dezimalzahl ohne Vorzeichen. Fehlt sie oder steht Unsinn darin: -1.
+long adminZahl(const char *text) {
+  if (!text || !*text) return -1;
+  long wert = 0;
+  for (; *text; ++text) {
+    if (*text < '0' || *text > '9' || wert > 99999999L) return -1;
+    wert = wert * 10 + (*text - '0');
   }
+  return wert;
 }
-
-// Belegte Plaetze zaehlen; dient auch als Kurzstatus fuer PING.
-int adminBelegt() {
-  int belegt = 0;
-  uint8_t uid[10]; uint8_t size = 0;
-  for (int slot = 0; slot < uidListe.capacity(); ++slot)
-    if (uidListe.entry(slot, uid, size)) ++belegt;
-  return belegt;
+uint8_t hexWert(char c) {
+  if (c >= '0' && c <= '9') return (uint8_t)(c - '0');
+  c = (char)(c | 0x20);   // Kleinbuchstabe
+  return (c >= 'a' && c <= 'f') ? (uint8_t)(c - 'a' + 10) : 16;
 }
-
-void adminZeileAusgeben(int slot, const uint8_t *uid, uint8_t size) {
-  Serial.print(F("#ROW "));
-  Serial.print(slot);
-  Serial.print(' ');
-  adminUidAusgeben(uid, size);
-  Serial.print(' ');
-  Serial.print(uidListe.funded(slot) ? 1 : 0);
-  Serial.print(' ');
-  Serial.print((unsigned long)uidListe.balance(slot));
-  Serial.print(' ');
-  uint8_t einheiten = uidListe.stakeUnits(slot);
-  Serial.print((unsigned long)(einheiten ? einheiten * Casino::STAKE_SCHRITT
-                                         : Casino::STAKE));
-  Serial.print(' ');
-  Serial.println(uidListe.flag(slot));
-}
-
-// Hexpaare in Bytes wandeln. Liefert die Laenge oder 0 bei Unsinn.
+// Hexpaare in Bytes wandeln. Liefert die Laenge (4, 7, 10) oder 0 bei Unsinn.
 uint8_t adminUidLesen(const char *text, uint8_t *uid) {
   uint8_t n = 0;
+  if (!text) return 0;
   while (text[0] && text[1]) {
-    if (n >= 10) return 0;
-    uint8_t hoch = 0, tief = 0;
-    for (uint8_t i = 0; i < 2; ++i) {
-      char c = text[i];
-      uint8_t wert;
-      if (c >= '0' && c <= '9') wert = (uint8_t)(c - '0');
-      else if (c >= 'a' && c <= 'f') wert = (uint8_t)(c - 'a' + 10);
-      else if (c >= 'A' && c <= 'F') wert = (uint8_t)(c - 'A' + 10);
-      else return 0;
-      if (i == 0) hoch = wert; else tief = wert;
-    }
+    uint8_t hoch = hexWert(text[0]), tief = hexWert(text[1]);
+    if (n >= 10 || hoch > 15 || tief > 15) return 0;
     uid[n++] = (uint8_t)((hoch << 4) | tief);
     text += 2;
   }
@@ -90,13 +73,20 @@ uint8_t adminUidLesen(const char *text, uint8_t *uid) {
 void adminBefehl(char *zeile) {
   char *cmd = strtok(zeile, " ");
   if (!cmd) return;
-  for (char *p = cmd; *p; ++p) *p = (char)toupper(*p);
+  for (char *p = cmd; *p; ++p) if (*p >= 'a' && *p <= 'z') *p = (char)(*p - 32);
+  char *a1 = strtok(NULL, " "), *a2 = strtok(NULL, " ");
+  long z1 = adminZahl(a1), z2 = adminZahl(a2);
+  int slot = (int)z1;
+  bool sitzungHier = spielAktiv && spielSlot == slot;
+  uint8_t uid[10]; uint8_t size = 0;
 
   if (!strcmp(cmd, "PING")) {
-    Serial.print(F("#OK PING v10 slots="));
+    int belegt = 0;
+    for (int s = 0; s < uidListe.capacity(); ++s) if (uidListe.entry(s, uid, size)) ++belegt;
+    Serial.print(F("#OK PING v11 slots="));
     Serial.print(uidListe.capacity());
     Serial.print(F(" used="));
-    Serial.print(adminBelegt());
+    Serial.print(belegt);
     Serial.print(F(" sound="));
     Serial.print(tonStufe);
     Serial.print(F(" session="));
@@ -104,135 +94,114 @@ void adminBefehl(char *zeile) {
     return;
   }
   if (!strcmp(cmd, "LIST")) {
-    uint8_t uid[10]; uint8_t size = 0;
     int n = 0;
-    for (int slot = 0; slot < uidListe.capacity(); ++slot) {
-      if (uidListe.entry(slot, uid, size)) { adminZeileAusgeben(slot, uid, size); ++n; }
+    for (int s = 0; s < uidListe.capacity(); ++s) {
+      if (!uidListe.entry(s, uid, size)) continue;
+      ++n;
+      Serial.print(F("#ROW "));
+      Serial.print(s);
+      Serial.print(' ');
+      for (uint8_t i = 0; i < size; ++i) {
+        if (uid[i] < 0x10) Serial.print('0');
+        Serial.print(uid[i], HEX);
+      }
+      Serial.print(' ');
+      Serial.print(uidListe.funded(s) ? 1 : 0);
+      Serial.print(' ');
+      Serial.print((unsigned long)uidListe.balance(s));
+      Serial.print(' ');
+      uint8_t einheiten = uidListe.stakeUnits(s);
+      Serial.print((unsigned long)(einheiten ? einheiten * Casino::STAKE_SCHRITT : Casino::STAKE));
+      Serial.print(' ');
+      Serial.println(uidListe.flag(s));
     }
     Serial.print(F("#OK LIST "));
     Serial.println(n);
     return;
   }
   if (!strcmp(cmd, "SET")) {
-    char *a1 = strtok(NULL, " "), *a2 = strtok(NULL, " ");
-    if (!a1 || !a2) { adminFehler(F("SET <platz> <wert>")); return; }
-    int slot = atoi(a1);
-    uint32_t wert = (uint32_t)strtoul(a2, NULL, 10);
+    if (z1 < 0 || z2 < 0) { adminFehler(F("SET <platz> <wert>")); return; }
     if (!uidListe.confirmed(slot)) { adminFehler(F("Platz nicht belegt")); return; }
-    if (!uidListe.setBalance(slot, wert)) { adminFehler(F("EEPROM-Buchung fehlgeschlagen")); return; }
+    if (!uidListe.setBalance(slot, (uint32_t)z2)) { adminFehler(F("EEPROM-Fehler")); return; }
     // Eine laufende Sitzung auf diesem Platz sofort nachziehen.
-    if (spielAktiv && spielSlot == slot) { spielGuthaben = wert; spielMenue(); }
-    Serial.print(F("#OK SET "));
-    Serial.print(slot);
-    Serial.print(' ');
-    Serial.println((unsigned long)wert);
+    if (sitzungHier) { spielGuthaben = (uint32_t)z2; spielMenue(); }
+    adminOk(cmd, slot, z2);
     return;
   }
   if (!strcmp(cmd, "STAKE")) {
-    char *a1 = strtok(NULL, " "), *a2 = strtok(NULL, " ");
-    if (!a1 || !a2) { adminFehler(F("STAKE <platz> <wert>")); return; }
-    int slot = atoi(a1);
-    uint32_t wert = (uint32_t)strtoul(a2, NULL, 10);
-    if (wert < Casino::STAKE_SCHRITT || wert > Casino::STAKE_MAX
-        || wert % Casino::STAKE_SCHRITT) {
-      adminFehler(F("Vielfaches von 10, hoechstens 2550"));
+    if (z1 < 0 || z2 < 0 || Casino::checkStake((uint32_t)z2, Casino::STAKE_MAX)) {
+      adminFehler(F("STAKE <platz> <10..2550, 10er>"));
       return;
     }
     if (!uidListe.funded(slot)) { adminFehler(F("Platz ohne Konto")); return; }
-    if (!uidListe.setStakeUnits(slot, (uint8_t)(wert / Casino::STAKE_SCHRITT))) {
-      adminFehler(F("EEPROM-Buchung fehlgeschlagen"));
+    if (!uidListe.setStakeUnits(slot, (uint8_t)(z2 / Casino::STAKE_SCHRITT))) {
+      adminFehler(F("EEPROM-Fehler"));
       return;
     }
-    if (spielAktiv && spielSlot == slot) { spielEinsatz = wert; spielMenue(); }
-    Serial.print(F("#OK STAKE "));
-    Serial.print(slot);
-    Serial.print(' ');
-    Serial.println((unsigned long)wert);
+    if (sitzungHier) { spielEinsatz = (uint32_t)z2; spielMenue(); }
+    adminOk(cmd, slot, z2);
     return;
   }
   if (!strcmp(cmd, "FLAG")) {
-    char *a1 = strtok(NULL, " "), *a2 = strtok(NULL, " ");
-    if (!a1 || !a2) { adminFehler(F("FLAG <platz> <0|1|2>")); return; }
-    int slot = atoi(a1);
-    int art = atoi(a2);
-    if (art < 0 || art > 2) { adminFehler(F("0 normal, 1 gesperrt, 2 unbegrenzt")); return; }
+    if (z1 < 0 || z2 < 0 || z2 > 2) { adminFehler(F("FLAG <platz> <0|1|2>")); return; }
     if (!uidListe.confirmed(slot)) { adminFehler(F("Platz nicht belegt")); return; }
-    if (!uidListe.setFlag(slot, (uint8_t)art)) { adminFehler(F("Nicht gesetzt")); return; }
+    if (!uidListe.setFlag(slot, (uint8_t)z2)) { adminFehler(F("EEPROM-Fehler")); return; }
     // Sperre wirkt sofort, auch mitten in einer laufenden Sitzung.
-    if (spielAktiv && spielSlot == slot) {
-      if (art == 1) beendeSitzung(true);
-      else { spielUnbegrenzt = (art == 2); spielMenue(); }
+    if (sitzungHier) {
+      if (z2 == 1) beendeSitzung(true);
+      else { spielUnbegrenzt = (z2 == 2); spielMenue(); }
     }
-    Serial.print(F("#OK FLAG "));
-    Serial.print(slot);
-    Serial.print(' ');
-    Serial.println(art);
+    adminOk(cmd, slot, z2);
     return;
   }
   if (!strcmp(cmd, "ADD")) {
-    char *a1 = strtok(NULL, " "), *a2 = strtok(NULL, " ");
-    if (!a1 || !a2) { adminFehler(F("ADD <uidhex> <wert>")); return; }
-    uint8_t uid[10]; uint8_t size = adminUidLesen(a1, uid);
-    if (!size) { adminFehler(F("UID braucht 8, 14 oder 20 Hexzeichen")); return; }
-    int slot = uidListe.reserve(uid, size);
+    size = adminUidLesen(a1, uid);
+    if (!size || z2 < 0) { adminFehler(F("ADD <uid 8/14/20 hex> <wert>")); return; }
+    slot = uidListe.reserve(uid, size);
     if (slot < 0) { adminFehler(slot == -3 ? F("Liste voll") : F("Liste gesperrt")); return; }
-    uint32_t wert = (uint32_t)strtoul(a2, NULL, 10);
-    if (!uidListe.confirm(slot) || !uidListe.setBalance(slot, wert)) {
-      adminFehler(F("Eintrag angelegt, Gutschrift fehlgeschlagen"));
+    if (!uidListe.confirm(slot) || !uidListe.setBalance(slot, (uint32_t)z2)) {
+      adminFehler(F("Angelegt, Gutschrift fehlt"));
       return;
     }
-    Serial.print(F("#OK ADD "));
-    Serial.print(slot);
-    Serial.print(' ');
-    Serial.println((unsigned long)wert);
+    adminOk(cmd, slot, z2);
     return;
   }
   if (!strcmp(cmd, "FREE")) {
-    char *a1 = strtok(NULL, " ");
-    if (!a1) { adminFehler(F("FREE <platz>")); return; }
-    int slot = atoi(a1);
-    if (spielAktiv && spielSlot == slot) beendeSitzung(true);
-    if (!uidListe.clearSlot(slot)) { adminFehler(F("Platz nicht freigegeben")); return; }
-    Serial.print(F("#OK FREE "));
-    Serial.println(slot);
+    if (z1 < 0) { adminFehler(F("FREE <platz>")); return; }
+    if (sitzungHier) beendeSitzung(true);
+    if (!uidListe.clearSlot(slot)) { adminFehler(F("Nicht freigegeben")); return; }
+    adminOk(cmd, slot, -1);
     return;
   }
   if (!strcmp(cmd, "SOUND")) {
-    char *a1 = strtok(NULL, " ");
-    if (!a1) { adminFehler(F("SOUND <0|1|2>")); return; }
-    int stufe = atoi(a1);
-    if (stufe < 0 || stufe > 2) { adminFehler(F("0 laut, 1 leise, 2 aus")); return; }
-    tonStufe = (byte)stufe;
+    if (z1 < 0 || z1 > 2) { adminFehler(F("SOUND <0|1|2>")); return; }
+    tonStufe = (byte)z1;
     uint8_t opt = (uint8_t)(uidListe.options() & ~3);
     if (tonStufe == TON_AUS) opt |= 1;
     else if (tonStufe == TON_LEISE) opt |= 2;
     uidListe.setOptions(opt);
-    Serial.print(F("#OK SOUND "));
-    Serial.println(tonStufe);
+    adminOk(cmd, z1, -1);
     return;
   }
   if (!strcmp(cmd, "CARD")) {
     // Genau derselbe Weg wie nach einem echten Scan. Gedacht fuer die
     // Simulation ohne RC522 und zum Testen ohne Karte in der Hand.
-    char *a1 = strtok(NULL, " ");
-    uint8_t uid[10];
-    uint8_t size = adminUidLesen(a1 ? a1 : "", uid);
-    if (!size) { adminFehler(F("CARD <uidhex>, 8/14/20 Hexzeichen")); return; }
+    size = adminUidLesen(a1, uid);
+    if (!size) { adminFehler(F("CARD <uid 8/14/20 hex>")); return; }
     legeKarteAuf(uid, size);
     Serial.println(F("#OK CARD"));
     return;
   }
   if (!strcmp(cmd, "WIPE")) {
-    char *a1 = strtok(NULL, " ");
-    if (!a1 || strcmp(a1, "JA")) { adminFehler(F("WIPE JA zum Bestaetigen")); return; }
+    if (!a1 || strcmp(a1, "JA")) { adminFehler(F("WIPE JA")); return; }
     if (spielAktiv) beendeSitzung(true);
     uidListe.wipe();
     bool ok = uidListe.begin();
     tonStufe = TON_LAUT;
-    Serial.println(ok ? F("#OK WIPE") : F("#ERR WIPE fehlgeschlagen"));
+    Serial.println(ok ? F("#OK WIPE") : F("#ERR WIPE"));
     return;
   }
-  adminFehler(F("Unbekannt: PING LIST SET STAKE FLAG ADD FREE CARD SOUND WIPE"));
+  adminFehler(F("PING LIST SET STAKE FLAG ADD FREE CARD SOUND WIPE"));
 }
 
 // Nichtblockierend aus loop() aufrufen. Zeilen laenger als ADMIN_MAX werden

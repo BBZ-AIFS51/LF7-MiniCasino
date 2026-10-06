@@ -51,5 +51,10 @@ constexpr uint32_t stakeLimit(uint32_t balance) {
   return balance < STAKE_SCHRITT ? STAKE_SCHRITT
     : ((balance < STAKE_MAX ? balance : STAKE_MAX) / STAKE_SCHRITT) * STAKE_SCHRITT;
 }
+// Eingetippter Einsatz: 0 = gueltig, 1 = kleiner als ein Schritt,
+// 2 = kein Vielfaches des Schritts, 3 = ueber der Grenze aus stakeLimit().
+constexpr uint8_t checkStake(uint32_t value, uint32_t limit) {
+  return value < STAKE_SCHRITT ? 1 : value % STAKE_SCHRITT ? 2 : value > limit ? 3 : 0;
+}
 }
 #endif

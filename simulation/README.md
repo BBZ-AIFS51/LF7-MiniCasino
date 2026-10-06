@@ -1,6 +1,6 @@
 # Simulation mit Wokwi
 
-Der komplette Automat im Browser, ohne jede Hardware: LCD, Taster, LEDs, Buzzer
+Der komplette Automat im Browser, ohne jede Hardware: OLED, Tastatur, Buzzer
 und der EEPROM mit allen Konten. **[wokwi.com](https://wokwi.com)** aufrufen,
 *New Project* → *Arduino Uno*.
 
@@ -41,17 +41,17 @@ mit Wokwi: es braucht eine echte serielle Schnittstelle.
 python simulation/build_sim.py
 ```
 
-Das erzeugt `simulation/wokwi/` mit vier Dateien. In Wokwi dann:
+Das erzeugt `simulation/wokwi/` mit den Dateien für Wokwi. In Wokwi dann:
 
 1. Inhalt von **`sketch.ino`** in den vorhandenen Reiter *sketch.ino* kopieren
    (eine Zeile — der Rest steckt in `casino.h`).
 2. Inhalt von **`diagram.json`** in den vorhandenen Reiter *diagram.json*.
-3. Über das **+** drei neue Dateien anlegen und befüllen:
-   **`casino.h`**, **`MFRC522.h`**, **`MFRC522.cpp`**.
+3. Über das **+** eine neue Datei **`casino.h`** anlegen und befüllen.
 4. **Start** drücken, unten den seriellen Monitor aufklappen.
 
-Bibliotheken müssen keine eingebunden werden: `LiquidCrystal`, `SPI` und
-`EEPROM` bringt Wokwi mit, `MFRC522` liegt als Kopie dabei.
+Bibliotheken braucht es keine: Display- und RFID-Treiber stecken in
+`casino.h`, `EEPROM` bringt Wokwi mit. Wokwi kennt nur den OLED-Chip
+SSD1306; in der Simulation wird er deshalb automatisch benutzt.
 
 Warum die Umleitung über `casino.h`: die Arduino-Toolchain setzt automatisch
 Funktionsprototypen an den Anfang jeder `.ino`, also noch vor die eingebetteten
@@ -66,16 +66,12 @@ Skript erneut laufen lassen und `casino.h` in Wokwi ersetzen.
 
 | Bauteil | Anschluss |
 |---|---|
-| LCD RS / E | D8 / D7 |
-| LCD D4 / D5 / D6 / D7 | D6 / D5 / D4 / D3 |
-| LCD VSS, RW, V0, K | GND |
-| LCD VDD, A | 5 V |
-| Taster Schwarz / Rot / Grün | A0 / A1 / A2 gegen GND |
-| LED Schwarz / Rot / Grün | A3 / A4 / A5 über je 330 Ω |
+| OLED GND / VCC / SCL / SDA | GND / 5 V / A5 / A4 |
+| Tastatur R1–R4 / C1–C4 | A1, A0, D8, D7 / D6, D5, D4, D3 |
 | Buzzer | D2 gegen GND |
 | Karte 1–4 (nur Simulation) | D9 / D10 / D11 / D12 gegen GND |
 
-Die Taster brauchen keine Widerstände, der Sketch nutzt `INPUT_PULLUP`.
+Die Tastatur braucht keine Widerstände, der Sketch nutzt `INPUT_PULLUP`.
 
 Am echten Aufbau kommt statt der Kartentaster der RC522 an dieselben Pins:
 SDA→D10, RST→D9, MOSI→D11, MISO→D12, SCK→D13, VCC→**3,3 V** (nicht 5 V),
@@ -83,10 +79,10 @@ GND→GND. Dann `CASINO_SIM` in `MiniCasino.ino` wieder auf `0`.
 
 ## Bedienung
 
-1. **Karte 1** drücken → `100€` Startguthaben, LCD zeigt `10€: S/R/G`
-2. Schwarz, Rot oder Grün tippen → Lauflicht, Ergebnis, neuer Stand
-3. **Schwarz halten** → Einsatz einstellen
-4. **Rot halten** → Logout · **Grün halten** → Ton laut/leise/aus
+1. **Karte 1** drücken → `100€` Startguthaben, OLED zeigt `10€ 1S 2R 3G`
+2. Auf der Tastatur 1 (Schwarz), 2 (Rot) oder 3 (Grün) tippen → Lauflicht, Ergebnis, neuer Stand
+3. **1 halten** → Einsatz einstellen
+4. **2 halten** → Logout · **3 halten** → Ton laut/leise/aus
 
 ## Was sich gut ausprobieren lässt
 

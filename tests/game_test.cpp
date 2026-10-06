@@ -9,6 +9,10 @@ static_assert(Casino::settled(90, 0, 1) == 90, "loss costs ten");
 static_assert(Casino::settled(0, 2, 2) == 90 && Casino::settled(0, 2, 1) == 0, "last stake on green");
 static_assert(!Casino::canPlay(UINT32_MAX - 79, 2) && Casino::canPlay(UINT32_MAX - 80, 2), "green overflow bound");
 static_assert(!Casino::canSettle(UINT32_MAX, 1, 1), "invalid pending overflow rejected");
+static_assert(Casino::checkStake(0, 100) == 1 && Casino::checkStake(5, 100) == 1, "typed stake: at least ten");
+static_assert(Casino::checkStake(55, 100) == 2 && Casino::checkStake(105, 2550) == 2, "typed stake: steps of ten");
+static_assert(Casino::checkStake(110, 100) == 3 && Casino::checkStake(2560, Casino::stakeLimit(UINT32_MAX)) == 3, "typed stake: not above the limit");
+static_assert(Casino::checkStake(10, 10) == 0 && Casino::checkStake(100, 100) == 0 && Casino::checkStake(2550, Casino::stakeLimit(9999)) == 0, "typed stake: valid values");
 constexpr bool allColours() {
   for (int choice = 0; choice < 3; ++choice) {
     int wins = 0;

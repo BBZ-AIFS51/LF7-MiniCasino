@@ -4,12 +4,12 @@
 
 Ergebnis in simulation/wokwi/:
 
-    sketch.ino    alle Projekt-Header eingebettet, CASINO_SIM aktiviert
-    MFRC522.h     mit den beiden Mini-Headern eingebettet
-    MFRC522.cpp   unveraendert
+    sketch.ino    nur ein include auf casino.h
+    casino.h      alle Projekt-Header eingebettet, CASINO_SIM aktiviert
     diagram.json  die Schaltung
 
-Damit sind in Wokwi vier Dateien anzulegen statt elf. Der Sketch in MiniCasino/
+Der Sketch braucht keine Bibliotheken ausser dem Arduino-Core, in Wokwi ist
+also nur casino.h neu anzulegen. Der Sketch in MiniCasino/
 bleibt die einzige Quelle: das Skript baut nur zusammen, es aendert keine Logik.
 """
 from pathlib import Path
@@ -23,7 +23,7 @@ ZIEL = Path(__file__).resolve().parent / "wokwi"
 
 # Header, die der Sketch selbst einbindet. Was diese wiederum einbinden, holt
 # einbetten() rekursiv nach (GameRuntime.h zieht zum Beispiel GameSounds.h).
-PROJEKT_HEADER = ["UidRegistry.h", "GameRules.h", "ButtonBank.h",
+PROJEKT_HEADER = ["Rc522.h", "OledText.h", "UidRegistry.h", "GameRules.h",
                   "GameRuntime.h", "AdminSerial.h"]
 
 INCLUDE = re.compile(r'^[ \t]*#include\s+"([^"]+)"[ \t]*$', re.M)
@@ -60,13 +60,7 @@ def einbetten(name: str) -> str:
         sys.exit(f"fehlt: {pfad}")
     text = ohne_waechter(pfad.read_text(encoding="utf-8"), name)
 
-    def ersetze(treffer):
-        eingebunden = treffer.group(1)
-        if eingebunden == "MFRC522.h":
-            return treffer.group(0)   # bleibt eine eigene Datei
-        return einbetten(eingebunden)
-
-    return INCLUDE.sub(ersetze, text)
+    return INCLUDE.sub(lambda treffer: einbetten(treffer.group(1)), text)
 
 
 def main() -> int:
@@ -90,7 +84,7 @@ def main() -> int:
 
     # Was jetzt noch an Projekt-includes uebrig ist, gehoert nicht mehr dazu
     # und wuerde in Wokwi nur fehlschlagen.
-    ino = INCLUDE.sub(lambda t: t.group(0) if t.group(1) == "MFRC522.h" else "", ino)
+    ino = INCLUDE.sub("", ino)
 
     kopf = ("// Automatisch erzeugt von simulation/build_sim.py.\n"
             "// Nicht hier aendern, sondern in MiniCasino/ und neu erzeugen.\n\n")
@@ -100,20 +94,15 @@ def main() -> int:
     (ZIEL / "sketch.ino").write_text(kopf + '#include "casino.h"\n',
                                      encoding="utf-8")
 
-    # MFRC522.h mit den beiden Mini-Headern zusammenfassen.
-    mfrc = (QUELLE / "MFRC522.h").read_text(encoding="utf-8")
-    for klein in ("require_cpp11.h", "deprecated.h"):
-        mfrc = mfrc.replace(f'#include "{klein}"',
-                            (QUELLE / klein).read_text(encoding="utf-8"), 1)
-    (ZIEL / "MFRC522.h").write_text(mfrc, encoding="utf-8")
-    shutil.copy2(QUELLE / "MFRC522.cpp", ZIEL / "MFRC522.cpp")
     shutil.copy2(Path(__file__).resolve().parent / "diagram.json",
                  ZIEL / "diagram.json")
+    for alt in ("MFRC522.h", "MFRC522.cpp", "libraries.txt"):   # aus frueheren Laeufen
+        (ZIEL / alt).unlink(missing_ok=True)
 
     print(f"Erzeugt in {ZIEL}:")
     for datei in sorted(ZIEL.iterdir()):
         print(f"  {datei.name:14} {datei.stat().st_size // 1024:4} KB")
-    print("\nIn Wokwi neu anlegen: casino.h, MFRC522.h, MFRC522.cpp")
+    print("\nIn Wokwi neu anlegen: casino.h")
     print("In die vorhandenen Reiter: sketch.ino und diagram.json")
     return 0
 

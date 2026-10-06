@@ -33,7 +33,9 @@ an, bis eine neue Runde beginnt oder eine Karte neu eingelesen wird.
 Es leuchtet immer höchstens eine LED. Ein neues Ergebnis wird während des
 Lauflichts nicht gezogen; zusätzliche Tastendrücke werden nicht angenommen.
 
-## Drei einzelne LEDs anschließen
+## Drei einzelne LEDs anschließen (bis V10, überholt)
+
+**Ab V11 gibt es keine LEDs mehr, das Lauflicht läuft auf dem OLED. Siehe [UMBAU_OLED.md](UMBAU_OLED.md).**
 
 Diese Verdrahtung gilt für gewöhnliche **zweibeinige Einzel-LEDs**.
 Vor dem Umstecken USB/Strom trennen. Jede LED braucht einen eigenen
@@ -66,7 +68,7 @@ Das grundsätzliche Prinzip LED plus Vorwiderstand zeigt auch
 Falls eure LEDs mehr als zwei Pins oder bereits eine Modulplatine haben, gilt
 diese Pinbelegung nicht automatisch; dann zuerst deren Beschriftung prüfen.
 
-## Vollständige Uno-Belegung
+## Vollständige Uno-Belegung (bis V10, überholt)
 
 | Uno-Pins | Funktion |
 |---|---|

@@ -1,9 +1,8 @@
 /*
- * Mini Casino - Konten im EEPROM, Karte als Ausweis, Ausgabe auf QAPASS 1602A
+ * Mini Casino - Konten im EEPROM, Karte als Ausweis, Ausgabe auf 1,3"-OLED
  *
- * Hardware: Arduino Uno (ATmega328P), RC522, 16x2-LCD ohne I2C-Adapter.
- * Bestaetigte LCD-Belegung: RS->D8, E->D7, D4->D6, D5->D5, D6->D4, D7->D3.
- * LCD: VSS/RW->GND, VDD->5V, VO->10-kOhm-Poti, A->200 Ohm->5V, K->GND.
+ * Hardware: Arduino Uno (ATmega328P), RC522, 128x64-OLED mit I2C (4 Pins).
+ * OLED: GND->GND, VCC->5V, SCL->A5, SDA->A4. Mehr Leitungen gibt es nicht.
  * RC522: SS/SDA->D10, RST->D9, MOSI->D11, MISO->D12, SCK->D13, VCC->3.3V.
  * Vollstaendige Stromversorgung/Pegelwandlung: siehe ../ANLEITUNG.md.
  *
@@ -25,12 +24,15 @@
  * Einmaliges Startguthaben pro UID. Die alte Merkliste (Format 06) wird nicht
  * uebernommen und nicht ueberschrieben: siehe CASINO_EEPROM_LOESCHEN.
  * Auszahlung Schwarz/Rot 20, Gruen 90, Verlust 0. Chancen: 45/45/10 Prozent.
- * LEDs: A3/A4/A5 mit je 330 Ohm nach GND.
+ * Keine LEDs mehr: das Lauflicht laeuft auf dem OLED.
+ * Tasten: 4x4-Folientastatur an D3-D8, A0, A1. 1/2/3 setzen auf Schwarz/Rot/Gruen,
+ * A Einsatz eintippen, B abmelden, C Ton, D Hilfe. Details: GameRuntime.h.
  * Spielplan/Taster: ../SPIELPLAN_V8.md; Ton D2: ../SOUND_V9.md. Kein FORCE.
  * Guthaben sind ganze Spielpunkte, kein manipulationsgeschuetztes Bezahlsystem.
- * Bibliotheken: SPI/EEPROM (Arduino Core) und LiquidCrystal (Arduino Core).
- * MFRC522 1.4.12 liegt als Kopie im Sketch-Ordner (Public Domain, Unlicense),
- * damit der Sketch ohne Bibliotheksverwalter kompiliert.
+ * Bibliotheken: nur EEPROM aus dem Arduino Core. Display-Treiber und
+ * Schrift (CC0) liegen in OledText.h, es muss nichts installiert werden.
+ * Der RC522 laeuft ueber einen eigenen kleinen Treiber (Rc522.h) statt der
+ * MFRC522-Bibliothek; er liest nur die UID.
  */
 
 // Ton ist eingeschaltet. 1 = passiver Buzzer (Melodien), 2 = aktiver Buzzer
@@ -58,12 +60,19 @@
 #define CASINO_EEPROM_LOESCHEN 0
 #endif
 
-// Waehrung auf dem LCD. 1 = Euro-Zeichen, 0 = "Pkt".
-// Der HD44780 kennt kein Euro-Zeichen; es wird als eigenes Zeichen definiert
-// und liegt dann auf Code 0. Am Spiel aendert das nichts, es sind weiterhin
+// Waehrung auf dem Display. 1 = Euro-Zeichen, 0 = "Pkt".
+// Die Schrift kennt kein Euro-Zeichen; es ist in OledText.h selbst gezeichnet
+// und liegt auf Code 0. Am Spiel aendert das nichts, es sind weiterhin
 // reine Spielpunkte ohne jeden Gegenwert.
 #ifndef CASINO_EURO
 #define CASINO_EURO 1
+#endif
+
+// Display-Chip. Fast alle 1,3-Zoll-OLEDs haben einen SH1106 (0), die
+// 0,96-Zoll-Module meist einen SSD1306 (1). Ist das Bild um zwei Pixel
+// verschoben oder steht am Rand Pixelmuell, auf die andere Einstellung gehen.
+#ifndef CASINO_OLED_SSD1306
+#define CASINO_OLED_SSD1306 0
 #endif
 
 // Simulationsbetrieb ohne RC522 (z.B. Wokwi). 1 = statt des Readers stehen
@@ -74,27 +83,29 @@
 #endif
 
 #include <Arduino.h>
-#include <SPI.h>
-#include "MFRC522.h"   // Liegt im Sketch-Ordner, kein Bibliotheksverwalter noetig.
-#include <LiquidCrystal.h>
+#include "Rc522.h"
 #include <EEPROM.h>
 #include <string.h>
+#include "OledText.h"
 #include "UidRegistry.h"
 #include "GameRules.h"
-#include "ButtonBank.h"
 // EmptyRegion.h und CardRecord.h gehoeren nicht mehr zum Sketch: Guthaben
 // liegen im EEPROM, der Kartenspeicher wird nicht mehr angefasst. Die Dateien
 // und ihre Tests bleiben als Beleg fuer das alte Kartenformat liegen.
 
 void spielMenue();
 
-// LCD: RS, E, D4, D5, D6, D7 (jeweils Arduino-Pins).
-LiquidCrystal lcd(8, 7, 6, 5, 4, 3);
-MFRC522 rfid(10, 9);
+// OLED am Hardware-I2C des Uno: SDA = A4, SCL = A5. Kein Reset-Pin.
+// Wokwi kennt nur den SSD1306, deshalb gilt der in der Simulation immer.
+OledText anzeige;
+Rc522 rfid;   // SS D10, RST D9, SPI D11-D13.
 Casino::UidRegistry<EEPROMClass> uidListe(EEPROM);
 
 const uint32_t STARTGUTHABEN = 100;  // Ganze Spielpunkte.
-const bool DEBUG_LOG = true;       // Nach der Fehlersuche auf false setzen.
+// Diagnose-Log auf der seriellen Schnittstelle. Mit false werden die Texte gar
+// nicht erst mitkompiliert (rund 3 KB). Euer Uno hat einen 4-KB-Bootloader und
+// damit nur 28 KB fuer den Sketch; mit true sind es rund 21 KB, das passt auch.
+const bool DEBUG_LOG = false;
 const unsigned long LOG_BAUD = 115200UL;
 const unsigned long ANZEIGEDAUER_MS = 5000UL;
 const unsigned long SCAN_PAUSE_MS = 1000UL;   // Nach erfolgreich gelesener Karte.
@@ -153,20 +164,12 @@ void logBytes(const __FlashStringHelper *thema, const byte *daten, byte anzahl) 
   Serial.println();
 }
 
-void logStatus(const __FlashStringHelper *schritt, MFRC522::StatusCode status,
-               byte adresse) {
+// Status: 0 OK, 1 Timeout, 2 Fehler, 3 Kollision (siehe Rc522.h).
+void logStatus(const __FlashStringHelper *schritt, byte status) {
   if (!DEBUG_LOG) return;
   logKopf(schritt);
-  if (adresse != 0xFF) {
-    Serial.print(F("Adresse="));
-    Serial.print(adresse);
-    Serial.print(' ');
-  }
   Serial.print(F("Status="));
-  Serial.print((byte)status);
-  Serial.print(F(" ("));
-  Serial.print(rfid.GetStatusCodeName(status));
-  Serial.println(')');
+  Serial.println(status);
 }
 // Lebenszeichen ohne Logflut: Timeouts bei REQA sind ohne neue Karte normal.
 void logLebenszeichen() {
@@ -184,19 +187,20 @@ void logLebenszeichen() {
   Serial.print(F(" Erkennungsfehler="));
   Serial.print(funkfehler);
   Serial.print(F(" Firmware=0x"));
-  logHex(rfid.PCD_ReadRegister(MFRC522::VersionReg));
+  logHex(rfid.version());
   Serial.println();
 }
 
 // Zwei kurze Zeilen aus dem Flash ausgeben. Texte passen in 16 Zeichen.
 void meldung(const __FlashStringHelper *oben,
              const __FlashStringHelper *unten) {
-  lcd.setCursor(0, 0);
-  lcd.print(oben);
-  for (byte i = strlen_P((PGM_P)oben); i < 16; ++i) lcd.print(' ');
-  lcd.setCursor(0, 1);
-  lcd.print(unten);
-  for (byte i = strlen_P((PGM_P)unten); i < 16; ++i) lcd.print(' ');
+  anzeige.setCursor(0, 0);
+  anzeige.print(oben);
+  for (byte i = strlen_P((PGM_P)oben); i < 16; ++i) anzeige.print(' ');
+  anzeige.setCursor(0, 1);
+  anzeige.print(unten);
+  for (byte i = strlen_P((PGM_P)unten); i < 16; ++i) anzeige.print(' ');
+  anzeige.hinweis(nullptr);   // Jeder Bildschirm setzt seinen Hinweis selbst.
   if (DEBUG_LOG) {
     logKopf(F("LCD"));
     Serial.print(oben);
@@ -222,12 +226,11 @@ void erkennungsfehler() {
   letzterFunkfehler = millis();
   if (fehlerFolge < 249) ++fehlerFolge;
   else fehlerFolge = 3;
-  rfid.PCD_StopCrypto1();
   if (fehlerFolge % 3 == 0) {
     logText(F("RF RECOVERY"), F("Drei weitere Erkennungsfehler; Antennenfeld kurz neu starten."));
-    rfid.PCD_AntennaOff();
+    rfid.antenne(false);
     delay(20);
-    rfid.PCD_AntennaOn();
+    rfid.antenne(true);
     delay(20);
   }
   if (fehlerFolge >= 3 && !funkHinweisGezeigt && !ergebnisSichtbar) {
@@ -237,18 +240,13 @@ void erkennungsfehler() {
     ergebnisSichtbar = true;
   }
 }
-// Eigenes Zeichen fuer den Euro, 5x8 Punkte auf Code 0.
-// Nicht const: createChar() erwartet einen beschreibbaren Zeiger. Acht Byte RAM.
-byte EURO_ZEICHEN[8] = {
-  0b00111, 0b01000, 0b11110, 0b01000, 0b11110, 0b01000, 0b00111, 0b00000
-};
 // Waehrung anhaengen und die belegten Stellen zurueckgeben.
 byte lcdWaehrung() {
 #if CASINO_EURO
-  lcd.write((uint8_t)0);   // Direkt an die Zahl, ohne Leerzeichen: 250<euro>
+  anzeige.write((uint8_t)0);   // Direkt an die Zahl, ohne Leerzeichen: 250<euro>
   return 1;
 #else
-  lcd.print(F(" Pkt"));
+  anzeige.print(F(" Pkt"));
   return 4;
 #endif
 }
@@ -256,8 +254,8 @@ byte lcdWaehrung() {
 // Bis zu zehn Ziffern plus Waehrung passen auch beim groessten uint32_t aufs LCD.
 void zeigeGuthaben(uint32_t guthaben, bool neu) {
   meldung(neu ? F("Neu aufgeladen!") : F("Guthaben:"), F(""));
-  lcd.setCursor(0, 1);
-  lcd.print((unsigned long)guthaben);
+  anzeige.setCursor(0, 1);
+  anzeige.print((unsigned long)guthaben);
   lcdWaehrung();
   if (DEBUG_LOG) {
     logKopf(F("GUTHABEN"));
@@ -280,19 +278,17 @@ void legeKarteAuf(const byte *uid, byte laenge) {
 }
 #include "AdminSerial.h"
 
-// Verarbeitet genau die durch PICC_Select ausgewaehlte Karte.
+// Verarbeitet genau die durch rfid.auswaehlen() ausgewaehlte Karte.
 // Ab Format 07 liegt das Guthaben im EEPROM des Uno. Der Kartenspeicher wird
 // weder gelesen noch beschrieben: es gibt keine Classic-Anmeldung, keine
 // Leerheits-/NDEF-Pruefung und keinen Schreibvorgang mehr. Die Karte dient nur
 // noch als Ausweis fuer ihre UID, deshalb reicht kurzes Auflegen.
-// Halt/StopCrypto erfolgen anschliessend zentral in loop().
+// Das Anhalten der Karte erfolgt anschliessend zentral in loop().
 void bearbeiteKarte() {
-  const MFRC522::Uid erwartet = rfid.uid;
-  MFRC522::PICC_Type typ = rfid.PICC_GetType(rfid.uid.sak);
+  const Rc522::Uid erwartet = rfid.uid;
   if (DEBUG_LOG) {
     logKopf(F("TYPE"));
-    Serial.print(rfid.PICC_GetTypeName(typ));
-    Serial.print(F(" SAK=0x"));
+    Serial.print(F("SAK=0x"));
     logHex(rfid.uid.sak);
     Serial.println();
   }
@@ -387,15 +383,12 @@ void setup() {
   Serial.begin(LOG_BAUD);
   if (DEBUG_LOG) {
     Serial.println();
-    logText(F("BOOT"), F("Mini Casino v10 | 115200 Baud | LCD 8,7,6,5,4,3"));
+    logText(F("BOOT"), F("Mini Casino v11 | 115200 Baud | OLED I2C A4/A5"));
     logText(F("MODUS"), F("Konten im EEPROM. Karte nur als Ausweis, Spiel ueber Tasten."));
     logText(F("BOOT"), F("Wiederholtes BOOT im laufenden Betrieb: Reset/Versorgung pruefen."));
   }
   spielSetup();
-  lcd.begin(16, 2);
-#if CASINO_EURO
-  lcd.createChar(0, EURO_ZEICHEN); // Euro liegt danach auf Zeichencode 0.
-#endif
+  anzeige.begin();
 #if CASINO_EEPROM_LOESCHEN
   uidListe.wipe();
   logText(F("EEPROM"), F("GELOESCHT: alle UIDs UND alle Guthaben verworfen."));
@@ -424,21 +417,19 @@ void setup() {
   if (TON_MODUS && DEBUG_LOG) {
     logKopf(F("TON"));
     Serial.print(stufenName(tonStufe));
-    Serial.println(F(" | Gruen halten schaltet weiter: laut, leise, aus."));
+    Serial.println(F(" | Taste C schaltet weiter: laut, leise, aus."));
   }
 #if CASINO_SIM
   simSetup();
   readerBereit = true;
   logText(F("SIM"), F("Ohne RC522. Taster D9-D12 stehen fuer vier Karten."));
-  meldung(F("Mini Casino v10"), F("Karte auflegen"));
+  meldung(F("Mini Casino v11"), F("Karte auflegen"));
   startAnzeige();
   return;
 #endif
   meldung(F("Mini Casino"), F("Starte Reader..."));
-  SPI.begin();
-  rfid.PCD_Init();
-  delay(50);
-  byte version = rfid.PCD_ReadRegister(MFRC522::VersionReg);
+  rfid.begin();   // Mit voller Empfangsverstaerkung fuer die Clone-Antennen.
+  byte version = rfid.version();
   if (DEBUG_LOG) {
     logKopf(F("RFID"));
     Serial.print(F("Firmware=0x"));
@@ -449,19 +440,6 @@ void setup() {
     meldung(F("RFID fehlt"), F("Kabel pruefen"));
     return;
   }
-  // Volle Empfangsverstaerkung (48 dB statt der ueblichen 33 dB). Kostet nichts
-  // und bringt bei den schwachen Clone-Antennen deutlich mehr Reichweite.
-  rfid.PCD_SetAntennaGain(MFRC522::RxGain_max);
-  rfid.PCD_AntennaOff();
-  delay(5);
-  rfid.PCD_AntennaOn();
-  delay(5);
-  if (DEBUG_LOG) {
-    logKopf(F("RFID"));
-    Serial.print(F("Antennengewinn=0x"));
-    logHex(rfid.PCD_GetAntennaGain());
-    Serial.println();
-  }
   readerBereit = true; // Auch euer Clone mit Version 0x88 wird akzeptiert.
   startAnzeige();
 }
@@ -469,15 +447,14 @@ void setup() {
 // Wiederholt Karten abfragen. millis()-Differenz funktioniert auch beim Ueberlauf.
 // Eine Sekunde Scan-Abstand verhindert schnelle Fehler-/LCD-Wiederholungen.
 void loop() {
-  tonService();
+  anzeige.hinweisAktualisieren();
   adminService(); // Verwaltungsbefehle haben nie Vorrang vor dem Spiel.
   unsigned long jetzt = millis();
-  // Kurz tippen spielt, halten loest die zweite Funktion aus. Solange eine
-  // Taste liegt, wird nicht nach Karten gesucht. Bewusst unabhaengig vom
+  // Jede Taste hat eine feste Funktion (GameRuntime.h). Im Durchlauf mit
+  // einem Tastendruck wird nicht nach Karten gesucht. Bewusst unabhaengig vom
   // Reader: ohne RC522 (Simulation, defektes Modul) bleiben Tasten, LCD und
   // das Verwaltungsprotokoll trotzdem bedienbar.
   if (tastenService(jetzt)) return;
-  ledService(jetzt);
   logLebenszeichen();
   if (spielAktiv && millis() - sitzungSeit >= SITZUNG_MS) beendeSitzung(false);
   if (!readerBereit) return;
@@ -495,49 +472,39 @@ void loop() {
   // nicht dazu fuehren, dass eine aufliegende Karte uebersehen wird.
   // WUPA statt REQA: das weckt auch eine Karte, die nach dem letzten Lesen
   // angehalten wurde und einfach liegen geblieben ist.
-  byte atqa[2];
-  byte laenge = sizeof(atqa);
-  MFRC522::StatusCode status = MFRC522::STATUS_TIMEOUT;
-  MFRC522::StatusCode auswahl = MFRC522::STATUS_ERROR;
+  byte status = Rc522::TIMEOUT;
+  byte auswahl = Rc522::FEHLER;
   for (byte versuch = 0; versuch < SCAN_VERSUCHE; ++versuch) {
-    // Gleiche Registervorbereitung wie PICC_IsNewCardPresent in MFRC522.
-    // Direkte Aufrufe liefern den Fehlercode, den die bool-Wrapper verbergen.
-    rfid.PCD_WriteRegister(MFRC522::TxModeReg, 0x00);
-    rfid.PCD_WriteRegister(MFRC522::RxModeReg, 0x00);
-    rfid.PCD_WriteRegister(MFRC522::ModWidthReg, 0x26);
-    laenge = sizeof(atqa);
-    status = rfid.PICC_WakeupA(atqa, &laenge);
+    status = rfid.wecken();
     ++abfragen;
-    if (status == MFRC522::STATUS_OK || status == MFRC522::STATUS_COLLISION) {
-      auswahl = rfid.PICC_Select(&rfid.uid); // Sofort, vor allen Logs zur Anfrage.
-      if (auswahl == MFRC522::STATUS_OK) break;
+    if (status == Rc522::OK || status == Rc522::KOLLISION) {
+      auswahl = rfid.auswaehlen(); // Sofort, vor allen Logs zur Anfrage.
+      if (auswahl == Rc522::OK) break;
     }
     // Gar keine Antwort heisst: da liegt nichts. Nicht weiter probieren.
-    if (status == MFRC522::STATUS_TIMEOUT) break;
+    if (status == Rc522::TIMEOUT) break;
     delay(8);
   }
-  if (status == MFRC522::STATUS_TIMEOUT) {
+  if (status == Rc522::TIMEOUT) {
     ++keineAntwort; // Keine Karte im Feld: normal, keine Pause.
     return;
   }
   // Nach einem Fehler nur kurz warten, nach einer gelesenen Karte laenger.
   scanPause = true;
-  scanPauseDauer = (auswahl == MFRC522::STATUS_OK) ? SCAN_PAUSE_MS : FEHLER_PAUSE_MS;
+  scanPauseDauer = (auswahl == Rc522::OK) ? SCAN_PAUSE_MS : FEHLER_PAUSE_MS;
   naechsterScanSeit = millis();
   ++scanNummer;
   if (DEBUG_LOG) {
     logKopf(F("SCAN"));
     Serial.println(scanNummer);
   }
-  logStatus(F("REQA"), status, 0xFF);
-  if (status != MFRC522::STATUS_OK && status != MFRC522::STATUS_COLLISION) {
+  logStatus(F("WUPA"), status);
+  if (status != Rc522::OK && status != Rc522::KOLLISION) {
     erkennungsfehler();
     return;
   }
-  if (status == MFRC522::STATUS_OK && laenge == 2) logBytes(F("ATQA"), atqa, 2);
-  status = auswahl;
-  logStatus(F("SELECT UID"), status, 0xFF);
-  if (status != MFRC522::STATUS_OK) {
+  logStatus(F("SELECT UID"), auswahl);
+  if (auswahl != Rc522::OK) {
     erkennungsfehler();
     return;
   }
@@ -547,19 +514,19 @@ void loop() {
 
   // Liegt die Karte der laufenden Sitzung noch auf, nur die Sitzung frisch
   // halten. Sonst wuerde WUPA sie im Sekundentakt neu anmelden.
-  if (spielAktiv && rfid.uid.size == spielUid.size
-      && memcmp(rfid.uid.uidByte, spielUid.uidByte, rfid.uid.size) == 0) {
-    sitzungSeit = millis();
-  } else {
-    bearbeiteKarte();
-  }
+  bool neueKarte = !(spielAktiv && rfid.uid.size == spielUid.size
+      && memcmp(rfid.uid.uidByte, spielUid.uidByte, rfid.uid.size) == 0);
+  if (neueKarte) bearbeiteKarte();
+  else sitzungSeit = millis();
   // Auf jedem Verarbeitungspfad aufraeumen, auch nach Fehlern.
-  status = rfid.PICC_HaltA();
-  logStatus(F("HALT"), status, 0xFF);
-  rfid.PCD_StopCrypto1();
+  rfid.anhalten();
   logText(F("ENDE"), F("Karte kann weg. Gespielt wird ueber die Tasten."));
   naechsterScanSeit = millis();
   scanPauseDauer = SCAN_PAUSE_MS;
-  ergebnisSeit = millis();
-  ergebnisSichtbar = true;
+  // Nur eine neu verarbeitete Karte zeigt ein Ergebnis an. Die liegen gebliebene
+  // Karte der Sitzung darf Einsatz-Eingabe oder Hilfe nicht unterbrechen.
+  if (neueKarte) {
+    ergebnisSeit = millis();
+    ergebnisSichtbar = true;
+  }
 }

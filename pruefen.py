@@ -24,11 +24,10 @@ arduino = Path(os.environ['LOCALAPPDATA']) / 'Arduino15'
 avr = arduino / 'packages/arduino/hardware/avr/1.8.8'
 bin_dir = arduino / 'packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/bin'
 core = avr / 'cores/arduino'
+# Display- und RFID-Treiber liegen im Sketch-Ordner, gebraucht wird nur EEPROM.
 libraries = [
-    avr / 'libraries/SPI/src',
     avr / 'libraries/EEPROM/src',
-    arduino / 'libraries/LiquidCrystal/src',
-]  # MFRC522 liegt als Kopie im Sketch-Ordner und wird unten mitkompiliert.
+]
 build = root / '.build'
 build.mkdir(exist_ok=True)
 includes = [f'-I{p}' for p in [core, avr / 'variants/standard', *libraries]]

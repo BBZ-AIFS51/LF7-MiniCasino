@@ -1,4 +1,6 @@
-# Mini Casino: LCD und Guthaben auf RFID
+# Mini Casino: Anzeige und Guthaben auf RFID
+
+**V11: Das LCD ist durch ein 1,3"-OLED (I2C) ersetzt, die LEDs sind entfallen.** Verdrahtung, Pins und Fehlersuche stehen in [UMBAU_OLED.md](UMBAU_OLED.md). Die Abschnitte zu LCD und LEDs unten sind damit überholt.
 
 **Aktuell V10: Die Guthaben liegen im EEPROM des Uno, nicht mehr auf der Karte. Einmal kurz auflegen, danach beliebig viele Runden nur mit den Tasten. Der Kartenspeicher wird nicht mehr gelesen oder beschrieben.** Tasten, Regeln und offene Runden: [SPIELPLAN_V8.md](SPIELPLAN_V8.md). Aktueller Tonanschluss und Jackpot: [SOUND_V9.md](SOUND_V9.md). Die V6-Erstaufladung und UID-Merkliste bleiben erhalten.
 
@@ -22,12 +24,12 @@ unten dokumentierten Pinbelegung von euch erfolgreich durchgeführt.
 | Transponder | Eigene MIFARE-Classic- und Ultralight-kompatible Projekt-Tags |
 | Verbindungsmaterial | Jumperkabel, USB-Kabel, für die RC522-Eingänge passende Pegelwandlung |
 
-Arduino **D3–D8** sind durch das LCD belegt, **D9–D13** durch den Reader.
-**A0–A2** sind in V7 Tastereingänge, **D2** ist für Ton vorbereitet. **A3/A4/A5** treiben die drei LEDs, jeweils mit eigenem 330-Ω-Widerstand. Damit sind alle weiteren Pins verplant. D0/D1 werden vom Sketch nicht
+Ab V11: **A4/A5** sind der I2C-Bus des OLED, **D9–D13** gehören dem Reader.
+**A0–A2** sind Tastereingänge, **D2** ist der Buzzer. **D3–D8** und **A3** sind frei. D0/D1 werden vom Sketch nicht
 genutzt; diese Pins gehören beim Uno auch zur seriellen Upload-Verbindung.
 Die beiden Geräte verwenden unterschiedliche Signalpins und gemeinsame Masse.
 
-## LCD anschließen
+## LCD anschließen (bis V10, überholt)
 
 Vor dem Umstecken USB/Stromversorgung trennen. Nach den Anschlussbeschriftungen
 gehen: Die Nummerierung nicht von der Betrachtungsrichtung erraten.
@@ -83,11 +85,9 @@ Unterbrechungen der Versorgungsschienen beachten.
 1. `MiniCasino/MiniCasino.ino` in der Arduino IDE öffnen. Hauptprogramm und
    LCD-Test sind getrennte Sketches: nicht in dieselbe Datei oder als zusätzliche
    IDE-Tabs zusammenkopieren, sonst wären `setup()` und `loop()` doppelt vorhanden.
-2. Bibliotheken: **MFRC522 liegt fertig im Sketch-Ordner** (Version 1.4.12,
-   Public Domain) und braucht keine Installation. Zusätzlich nötig ist nur
-   **LiquidCrystal von Arduino**. Hier wird keine I2C-LCD-Bibliothek verwendet.
+2. Bibliotheken: keine. OLED- und RC522-Treiber liegen im Sketch-Ordner.
 3. Arduino Uno und dessen Port auswählen, mit dem Upload-Pfeil hochladen.
-4. Das LCD sollte `Mini Casino` / `Karte auflegen` zeigen.
+4. Das OLED sollte `Mini Casino v11` / `Karte auflegen` zeigen.
 5. Einen eigenen leeren Projekt-Transponder auflegen und während des Schreibens
    liegen lassen. Erwartet: `Neu aufgeladen!` / `100 Pkt`.
 6. Transponder entfernen und erneut auflegen. Erwartet: `Guthaben:` / `100 Pkt`.
@@ -224,10 +224,10 @@ Reparatur oder Rücksetzung der Liste.
 | `SCAN_PAUSE_MS` | 1000 | Pause nach einem Erkennungsversuch mit Antwort |
 | `ANZEIGEDAUER_MS` | 5000 | Ergebnisanzeige |
 
-Die bestätigte Pinbelegung bleibt erhalten. Alle 13 Dateien aus `MiniCasino`
-zusammen übernehmen, MFRC522 eingeschlossen.
-EEPROM, SPI und LiquidCrystal kommen mit dem Arduino-Core, MFRC522 liegt
-im Ordner. Es muss also nichts mehr nachinstalliert werden. Ein geöffneter
+Die bestätigte Pinbelegung bleibt erhalten. Alle Dateien aus `MiniCasino`
+zusammen übernehmen, die Treiber `OledText.h` und `Rc522.h` eingeschlossen.
+EEPROM kommt mit dem Arduino-Core, OLED- und RC522-Treiber liegen
+im Ordner. Nachinstalliert werden muss nichts. Ein geöffneter
 serieller Monitor ist nicht zum Betrieb erforderlich.
 
 ## Meldungen und Diagnose
