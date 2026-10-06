@@ -13,10 +13,10 @@ Vor dem Umstecken immer USB abziehen.
 |---|---|
 | D0/D1 | USB-Seriell, nicht belegen |
 | D2 | Buzzer über 330 Ω |
-| D3–D6 | Tastatur Pin 1–4 (Reihen) |
-| D7, D8 | Tastatur Pin 5, 6 (Spalten) |
+| D3–D6 | Tastatur Pin 1–4, die Spalten von rechts nach links |
+| D7, D8 | Tastatur Pin 5, 6, die Reihen `* 0 # D` und `7 8 9 C` |
 | D9–D13 | RC522 |
-| A0, A1 | Tastatur Pin 7, 8 (Spalten) |
+| A0, A1 | Tastatur Pin 7, 8, die Reihen `4 5 6 B` und `1 2 3 A` |
 | A2, A3 | frei |
 | A4 | OLED SDA |
 | A5 | OLED SCL |
@@ -44,27 +44,24 @@ eurem Modul, manche haben VCC und GND vertauscht.
 Die drei Taster und ihre Kabel kommen raus. Die Tastatur braucht weder Breadboard
 noch GND noch Widerstände: 8 Kabel der Reihe nach direkt vom Stecker zum Uno.
 
-| Tastatur-Pin | Uno |
-|---|---|
-| 1 | D3 |
-| 2 | D4 |
-| 3 | D5 |
-| 4 | D6 |
-| 5 | D7 |
-| 6 | D8 |
-| 7 | A0 |
-| 8 | A1 |
-
-Bedienung wie vorher mit den Tastern:
-
-| Taste | kurz tippen | halten |
+| Tastatur-Pin | Uno | Leitung |
 |---|---|---|
-| 1 | auf Schwarz setzen | Einsatz einstellen (dann 1 = −10, 2 = +10, 3 = ok) |
-| 2 | auf Rot setzen | abmelden |
-| 3 | auf Grün setzen | Ton laut / leise / aus |
+| 1 | D3 | Spalte `A B C D` |
+| 2 | D4 | Spalte `3 6 9 #` |
+| 3 | D5 | Spalte `2 5 8 0` |
+| 4 | D6 | Spalte `1 4 7 *` |
+| 5 | D7 | Reihe `* 0 # D` |
+| 6 | D8 | Reihe `7 8 9 C` |
+| 7 | A0 | Reihe `4 5 6 B` |
+| 8 | A1 | Reihe `1 2 3 A` |
 
-Die übrigen Tasten haben keine Funktion. Die Belegung steht als Tabelle
-`KEYPAD_BELEGUNG` oben in `GameRuntime.h` und lässt sich dort ändern.
+So steht es in `GameRuntime.h`: `KEYPAD_REIHEN = {A1, A0, 8, 7}` und
+`KEYPAD_SPALTEN = {6, 5, 4, 3}`. D3–D6 sind also die Spalten von rechts nach
+links, D7, D8, A0 und A1 die Reihen von unten nach oben. Schaut man von vorne
+auf die Tasten, Folienschwanz unten, ist Pin 1 der rechte Kontakt und Pin 8 der
+linke. Die Firmware fragt immer eine Reihe nach der anderen ab, die Spalten
+lesen über die internen Pullups mit. Was jede Taste tut, steht unten unter
+Bedienung.
 
 Der Code ist auf euren Aufbau eingestellt und dort mit allen 16 Tasten getestet.
 Steckt jemand den Stecker andersherum, zeigt `Hardware_Test` bei der 1 ein `D` an.
@@ -152,7 +149,15 @@ Treiber statt Bibliotheken:
 `DEBUG_LOG` steht weiter auf `false`. Damit werden die Diagnose-Texte gar nicht
 erst mitkompiliert. Mit `true` wären es rund 21 KB, das passt inzwischen auch.
 
-## Noch nicht angepasst
+## Gehäuse, 3D-Viewer und Grafiken
 
-- Das 3D-Gehäuse in `case/` hat noch den Ausschnitt für das LCD und die LED-Löcher.
-- `docs/wiring.svg` und der 3D-Viewer zeigen noch den alten Aufbau.
+Alles zeigt jetzt den Aufbau V11:
+
+- Das Gehäuse in `case/` hat das Fenster für das OLED, die Mulde für die
+  Tastatur mit dem Schlitz für das Flachkabel und die Tap-Zone über dem RC522.
+  LCD-Ausschnitt, LED- und Tasterlöcher sind weg.
+- Der 3D-Viewer in `case/viewer/` zeigt dieselben Teile und Kabel und spielt
+  mit der Logik der Firmware.
+- Schaltplan, Verdrahtung, Pinbelegung und die Bilder im README erzeugt
+  `python docs/make_graphics.py` direkt aus der Firmware (Schrift, Tastatur,
+  Spieltakt) und den Kabeln in `case/viewer/js/core.js`.

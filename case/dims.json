@@ -1,66 +1,253 @@
 {
-  "outer_mm": [
-    190.0,
-    130.0,
-    40.0,
-    62.9
-  ],
+  "version": 11,
+  "outer_mm": [200.0, 148.0, 34.0, 60.1],
   "slope_deg": 10.0,
-  "wall_mm": 3.2,
-  "floor_mm": 4.0,
-  "lid_mm": 4.0,
+  "wall_mm": 2.4,
+  "floor_mm": 3.0,
+  "lid_mm": 3.0,
+  "corner_radius_mm": 10.0,
+  "lid_edge_radius_mm": 1.8,
   "screws": {
-    "count": 6,
+    "count": 4,
     "type": "m3 x 12 countersunk",
-    "boss_hole_mm": 2.7
+    "boss_hole_mm": 2.7,
+    "positions_xy": [[8.5, 8.5], [191.5, 8.5], [8.5, 139.5], [191.5, 139.5]]
   },
-  "button_hole_mm": 24.5,
-  "led_hole_mm": 5.1,
-  "lcd_window_mm": [
-    72.5,
-    25.5
-  ],
-  "lid_print_shift": [
-    0.0,
-    -138.951,
-    -39.392
-  ],
+  "lid_layout_uv": {
+    "keypad_axis_u": 54.8,
+    "tap_axis_u": 145.2,
+    "front_row_v": 58.65,
+    "back_row_v": 119.85,
+    "margin": 20.0,
+    "lid_length_on_slope": 150.28
+  },
+  "oled_window": {
+    "opening_mm": [30.22, 15.5],
+    "at_top_mm": [31.82, 17.1],
+    "chamfer_45_mm": 0.8,
+    "lid_over_panel_mm": 1.2,
+    "active_area_mm": [29.42, 14.7],
+    "mount": "pcb flush under the lid, frame + 2 snap clips, 4 x m2 pilots d1.6 optional"
+  },
+  "keypad_recess": {
+    "size_mm": [69.6, 77.3],
+    "depth_mm": 0.8,
+    "corner_radius_mm": 1.8,
+    "ribbon_slot_mm": [22.0, 3.8],
+    "slot_note": "straddles the front edge of the recess, passes the 8 pin connector"
+  },
+  "tap_zone": {
+    "ring_d_mm": 52.0,
+    "engrave_mm": 0.5,
+    "lid_over_antenna_mm": 1.6,
+    "rc522": "component side down, back flush under the lid, frame + 2 clips + 4 pegs, 90 degree header toward the centre"
+  },
+  "grille": {
+    "holes": 37,
+    "hole_d_mm": 1.8,
+    "pattern_d_mm": 22.2
+  },
+  "back_wall": {
+    "usb_b_opening_mm": [13.2, 12.2],
+    "dc_jack_opening_d_mm": 11.5
+  },
+  "uno": {
+    "standoffs_mm": 5.0,
+    "screws": "4 x m3 x 6 self tapping"
+  },
+  "breadboard_pocket_mm": [83.3, 55.3, 0.6],
+  "parts": {
+    "uno": {
+      "pcb_centre_xy": [42.17, 106.91],
+      "pcb_bottom_z": 8.0,
+      "orientation": "usb-b edge against the back wall, digital header toward the breadboard",
+      "usb_b_x": 53.6
+    },
+    "breadboard": {
+      "centre_xy": [115.99, 106.01],
+      "bottom_z": 2.4,
+      "orientation": "column 1 on the left, rows a-e toward the back"
+    },
+    "buzzer": {
+      "holes": "c26 c27 c28, upright, can toward row a, under the grille"
+    },
+    "resistor": {
+      "holes": "e24 e26, upright"
+    },
+    "oled": {
+      "pcb_centre_uv": [54.8, 117.8],
+      "active_area_centre_uv": [54.8, 119.85],
+      "orientation": "glass up, header toward the back"
+    },
+    "keypad": {
+      "centre_uv": [54.8, 58.65],
+      "orientation": "legends readable from the front, tail to the front"
+    },
+    "rc522": {
+      "pcb_centre_uv": [135.3, 58.65],
+      "antenna_centre_uv": [145.2, 58.65],
+      "orientation": "component side down, 90 degree header toward the case centre"
+    }
+  },
+  "feet": {
+    "count": 4,
+    "recess_d_mm": 10.5,
+    "depth_mm": 0.8
+  },
+  "lid_print_shift": [0.0, -155.893, -33.483],
   "stats": {
     "base": {
-      "triangles": 11982,
-      "bounds_mm": [
-        0.0,
-        0.0,
-        0.0,
-        190.0,
-        130.0,
-        58.86
-      ],
-      "volume_cm3": 192.9
+      "triangles": 6652,
+      "bounds_mm": [0.0, 0.0, 0.0, 200.0, 148.0, 57.03],
+      "volume_cm3": 161.6
     },
     "lid": {
-      "triangles": 18244,
-      "bounds_mm": [
-        0.0,
-        0.0,
-        0.0,
-        190.0,
-        132.71,
-        11.0
-      ],
-      "volume_cm3": 92.8
+      "triangles": 14902,
+      "bounds_mm": [0.0, 0.0, 0.0, 200.0, 150.45, 6.25],
+      "volume_cm3": 83.9
     },
     "assembly": {
-      "triangles": 30226,
-      "bounds_mm": [
-        0.0,
-        0.0,
-        0.0,
-        190.0,
-        130.0,
-        62.92
-      ],
-      "volume_cm3": 285.7
-    }
+      "triangles": 21948,
+      "bounds_mm": [0.0, 0.0, 0.0, 200.0, 148.0, 59.8],
+      "volume_cm3": 245.5
+    },
+    "mass_g_pla_estimate": 259,
+    "viewer_case_geo_kb": 256.3
+  },
+  "fit_check": {
+    "uno": {
+      "mount": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 0.0
+      },
+      "free": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 0.38
+      },
+      "keep": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 5.74
+      }
+    },
+    "breadboard": {
+      "mount": {
+        "overlap_mm3": 0.0077,
+        "clearance_mm": 0.0
+      },
+      "free": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 8.5
+      },
+      "keep": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 12.45
+      }
+    },
+    "buzzer": {
+      "free": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 8.5
+      }
+    },
+    "oled": {
+      "mount": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 0.0
+      },
+      "free": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 0.1
+      },
+      "keep": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 8.7
+      }
+    },
+    "rc522": {
+      "mount": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 0.0
+      },
+      "free": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 0.2
+      },
+      "keep": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 1.6
+      }
+    },
+    "keypad": {
+      "mount": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 0.0
+      },
+      "free": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 0.79
+      }
+    },
+    "pairs": {
+      "uno/breadboard": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 5.64
+      },
+      "uno/buzzer": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 25.0
+      },
+      "uno/oled": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 8.73
+      },
+      "uno/rc522": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 18.45
+      },
+      "uno/keypad": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 7.99
+      },
+      "breadboard/oled": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 17.88
+      },
+      "breadboard/rc522": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 13.23
+      },
+      "breadboard/keypad": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 16.35
+      },
+      "buzzer/oled": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 25.0
+      },
+      "buzzer/rc522": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 25.0
+      },
+      "buzzer/keypad": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 25.0
+      },
+      "oled/rc522": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 25.0
+      },
+      "oled/keypad": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 4.52
+      },
+      "rc522/keypad": {
+        "overlap_mm3": 0.0,
+        "clearance_mm": 3.8
+      }
+    },
+    "min_clearance_parts_mm": 0.1,
+    "min_clearance_wires_mm": 1.6,
+    "slot_passes_connector": true,
+    "ok": true
   }
 }
