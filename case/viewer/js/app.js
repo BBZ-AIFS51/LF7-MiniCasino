@@ -169,6 +169,7 @@
         if (MC.OledRenderer && typeof MC.OledRenderer.createTexture === 'function') {
           try {
             oledTex = MC.OledRenderer.createTexture();
+            app.oledTex = oledTex;   // read by praesentation/index.html for the big OLED mirror
             sceneCall('setOledTexture', oledTex);
             if (oled && oled.fb) { oledTex.update(oled.fb); sceneCall('oledChanged'); }
           } catch (err) { console.error('[app] oled texture', err); }
